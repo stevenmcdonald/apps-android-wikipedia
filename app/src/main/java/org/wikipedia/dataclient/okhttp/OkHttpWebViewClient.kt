@@ -80,6 +80,11 @@ abstract class OkHttpWebViewClient : WebViewClient() {
     private fun request(request: WebResourceRequest): Response {
         val builder = Request.Builder().url(request.url.toString()).cacheControl(model.cacheControl)
         for (header in request.requestHeaders.keys) {
+            // remove override user agent from webview
+            // https://stackoverflow.com/questions/47165973/what-does-the-wv-means-on-an-user-agent-string
+            if (header.equals("User-Agent")) {
+                continue;
+            }
             if (header == "If-None-Match" || header == "If-Modified-Since") {
                 // Strip away conditional headers from the request coming from the WebView, since
                 // we want control of caching for ourselves (it can break OkHttp's caching internals).

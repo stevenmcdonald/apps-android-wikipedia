@@ -17,11 +17,41 @@ import org.wikipedia.settings.Prefs
 import org.wikipedia.util.DimenUtil
 import org.wikipedia.util.FeedbackUtil
 import org.wikipedia.util.ResourceUtil
+import android.content.BroadcastReceiver
+import android.content.IntentFilter
+import android.text.TextUtils
+import android.util.Log
+import androidx.core.content.ContextCompat
+import androidx.localbroadcastmanager.content.LocalBroadcastManager
+import org.greatfire.envoy.CronetNetworking
+import org.greatfire.envoy.NetworkIntentService
+import org.greatfire.envoy.EXTENDED_DATA_VALID_URLS
+import org.greatfire.envoy.BROADCAST_VALID_URL_FOUND
+import org.greatfire.envoy.ShadowsocksService
 
 class MainActivity : SingleFragmentActivity<MainFragment>(), MainFragment.Callback {
     private lateinit var binding: ActivityMainBinding
 
     private var controlNavTabInFragment = false
+
+    private val mBroadcastReceiver: BroadcastReceiver = object : BroadcastReceiver() {
+        override fun onReceive(context: Context?, intent: Intent?) {
+            if (intent != null && context != null) {
+                val validUrls = intent.getStringArrayListExtra(EXTENDED_DATA_VALID_URLS)
+                Log.i("BroadcastReceiver", "Received valid urls: " + validUrls?.let {
+                    TextUtils.join(", ",
+                        it
+                    )
+                })
+                if (validUrls != null && !validUrls.isEmpty()) {
+                    val envoyUrl = validUrls[0]
+                    // Select the fastest one, reInitializeIfNeeded set to false
+                    CronetNetworking.initializeCronetEngine(context, envoyUrl)
+
+                }
+            }
+        }
+    }
 
     override fun inflateAndSetContentView() {
         binding = ActivityMainBinding.inflate(layoutInflater)
@@ -30,6 +60,18 @@ class MainActivity : SingleFragmentActivity<MainFragment>(), MainFragment.Callba
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        // register to receive test results
+        LocalBroadcastManager.getInstance(this).registerReceiver(mBroadcastReceiver, IntentFilter(BROADCAST_VALID_URL_FOUND))
+
+        val shadowsocksIntent = Intent(this, ShadowsocksService::class.java)
+        shadowsocksIntent.putExtra("org.greatfire.envoy.START_SS_LOCAL", ""); // set ss uri here
+        ContextCompat.startForegroundService(applicationContext, shadowsocksIntent)
+
+        val envoyUrl = "socks5://127.0.0.1:1080"; // Keep this if no port conflicts
+        val envoyUrls = listOf<String>(envoyUrl, "") // set envoy url here
+        NetworkIntentService.submit(this, envoyUrls)
+        // CronetNetworking.initializeCronetEngine(applicationContext, "") // set envoy url here
 
         setImageZoomHelper()
         if (Prefs.isInitialOnboardingEnabled && savedInstanceState == null) {

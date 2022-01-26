@@ -9,6 +9,7 @@ import org.wikipedia.dataclient.SharedPreferenceCookieManager
 import org.wikipedia.settings.Prefs
 import java.io.File
 import java.util.concurrent.TimeUnit
+import org.greatfire.envoy.CronetInterceptor
 
 object OkHttpConnectionFactory {
     @JvmField val CACHE_CONTROL_FORCE_NETWORK = CacheControl.Builder().maxAge(0, TimeUnit.SECONDS).build()
@@ -33,6 +34,7 @@ object OkHttpConnectionFactory {
                 .addInterceptor(OfflineCacheInterceptor())
                 .addInterceptor(TestStubInterceptor())
                 .addInterceptor(TitleEncodeInterceptor())
+                .addInterceptor(CronetInterceptor())
                 .build()
     }
 }

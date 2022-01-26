@@ -16,6 +16,7 @@ import retrofit2.Retrofit
 import retrofit2.adapter.rxjava3.RxJava3CallAdapterFactory
 import retrofit2.create
 import java.io.IOException
+import org.greatfire.envoy.CronetInterceptor
 
 object ServiceFactory {
 
@@ -78,7 +79,10 @@ object ServiceFactory {
     private fun createRetrofit(wiki: WikiSite?, baseUrl: String): Retrofit {
         return Retrofit.Builder()
             .baseUrl(baseUrl)
-            .client(OkHttpConnectionFactory.client.newBuilder().addInterceptor(LanguageVariantHeaderInterceptor(wiki)).build())
+            .client(OkHttpConnectionFactory.client.newBuilder()
+                .addInterceptor(LanguageVariantHeaderInterceptor(wiki))
+                .addInterceptor(CronetInterceptor())
+                .build())
             .addCallAdapterFactory(RxJava3CallAdapterFactory.create())
             .addConverterFactory(JsonUtil.json.asConverterFactory("application/json".toMediaType()))
             .build()

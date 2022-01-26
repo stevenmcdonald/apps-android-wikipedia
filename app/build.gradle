@@ -60,6 +60,10 @@ android {
         buildConfigField "String", "META_WIKI_BASE_URI", '"https://meta.wikimedia.org"'
         buildConfigField "String", "EVENTGATE_ANALYTICS_EXTERNAL_BASE_URI", '"https://intake-analytics.wikimedia.org"'
         buildConfigField "String", "EVENTGATE_LOGGING_EXTERNAL_BASE_URI", '"https://intake-logging.wikimedia.org"'
+
+        packagingOptions {
+            doNotStrip '**/libcronet*.so'
+        }
     }
 
     testOptions {
@@ -268,6 +272,11 @@ dependencies {
     androidTestImplementation 'androidx.test.uiautomator:uiautomator:2.2.0'
     androidTestImplementation "android.arch.persistence.room:testing:1.1.1"
     androidTestUtil 'androidx.test:orchestrator:1.4.1'
+
+    debugImplementation files('libs/cronet-debug.aar')
+    debugImplementation files('libs/envoy-debug.aar')
+    releaseImplementation files('libs/cronet-release.aar')
+    releaseImplementation files('libs/envoy-release.aar')
 }
 
 private setSigningConfigKey(config, Properties props) {
