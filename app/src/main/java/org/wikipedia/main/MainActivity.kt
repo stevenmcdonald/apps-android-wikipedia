@@ -21,13 +21,11 @@ import android.content.BroadcastReceiver
 import android.content.IntentFilter
 import android.text.TextUtils
 import android.util.Log
-import androidx.core.content.ContextCompat
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import org.greatfire.envoy.CronetNetworking
 import org.greatfire.envoy.NetworkIntentService
 import org.greatfire.envoy.EXTENDED_DATA_VALID_URLS
 import org.greatfire.envoy.BROADCAST_VALID_URL_FOUND
-import org.greatfire.envoy.ShadowsocksService
 
 class MainActivity : SingleFragmentActivity<MainFragment>(), MainFragment.Callback {
     private lateinit var binding: ActivityMainBinding
@@ -39,15 +37,12 @@ class MainActivity : SingleFragmentActivity<MainFragment>(), MainFragment.Callba
             if (intent != null && context != null) {
                 val validUrls = intent.getStringArrayListExtra(EXTENDED_DATA_VALID_URLS)
                 Log.i("BroadcastReceiver", "Received valid urls: " + validUrls?.let {
-                    TextUtils.join(", ",
-                        it
-                    )
+                    TextUtils.join(", ", it)
                 })
                 if (validUrls != null && !validUrls.isEmpty()) {
                     val envoyUrl = validUrls[0]
-                    // Select the fastest one, reInitializeIfNeeded set to false
+                    // select the fastest one (urls are ordered by latency), reInitializeIfNeeded set to false
                     CronetNetworking.initializeCronetEngine(context, envoyUrl)
-
                 }
             }
         }
@@ -64,14 +59,20 @@ class MainActivity : SingleFragmentActivity<MainFragment>(), MainFragment.Callba
         // register to receive test results
         LocalBroadcastManager.getInstance(this).registerReceiver(mBroadcastReceiver, IntentFilter(BROADCAST_VALID_URL_FOUND))
 
+        // TEMP - shadowsocks is not supported in the current build
+        /*
         val shadowsocksIntent = Intent(this, ShadowsocksService::class.java)
-        shadowsocksIntent.putExtra("org.greatfire.envoy.START_SS_LOCAL", ""); // set ss uri here
+        // put shadowsocks proxy url here, should look like ss://Y2hhY2hhMjAtaWV0Zi1wb2x5MTMwNTpwYXNz@127.0.0.1:1234
+        shadowsocksIntent.putExtra("org.greatfire.envoy.START_SS_LOCAL", "ss://foo");
         ContextCompat.startForegroundService(applicationContext, shadowsocksIntent)
+        */
 
-        val envoyUrl = "socks5://127.0.0.1:1080"; // Keep this if no port conflicts
-        val envoyUrls = listOf<String>(envoyUrl, "") // set envoy url here
-        NetworkIntentService.submit(this, envoyUrls)
-        // CronetNetworking.initializeCronetEngine(applicationContext, "") // set envoy url here
+        // TEMP - submitting local shadowsocks url with no active service causes an exception
+        // val ssUrl = "socks5://127.0.0.1:1080";  // local shadowsocks url, keep this if no port conflicts
+        val envoyUrl = "https://foo"  // put envoy url here
+        // val possibleUrls = listOf<String>(ssUrl, envoyUrl)  // build collection of urls
+        val possibleUrls = listOf<String>(envoyUrl)  // build collection of urls
+        NetworkIntentService.submit(this, possibleUrls)  // submit urls to envoy for evaluation
 
         setImageZoomHelper()
         if (Prefs.isInitialOnboardingEnabled && savedInstanceState == null) {

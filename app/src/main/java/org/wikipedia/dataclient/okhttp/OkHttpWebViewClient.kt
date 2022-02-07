@@ -82,7 +82,7 @@ abstract class OkHttpWebViewClient : WebViewClient() {
         for (header in request.requestHeaders.keys) {
             // remove override user agent from webview
             // https://stackoverflow.com/questions/47165973/what-does-the-wv-means-on-an-user-agent-string
-            if (header.equals("User-Agent")) {
+            if (header == "User-Agent") {
                 continue;
             }
             if (header == "If-None-Match" || header == "If-Modified-Since") {
