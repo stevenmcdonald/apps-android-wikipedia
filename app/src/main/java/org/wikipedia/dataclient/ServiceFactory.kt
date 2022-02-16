@@ -81,6 +81,8 @@ object ServiceFactory {
             .baseUrl(baseUrl)
             .client(OkHttpConnectionFactory.client.newBuilder()
                 .addInterceptor(LanguageVariantHeaderInterceptor(wiki))
+                // this interceptor will be bypassed if no valid proxy urls were found at startup
+                // the app will connect to the internet directly if possible
                 .addInterceptor(CronetInterceptor())
                 .build())
             .addCallAdapterFactory(RxJava3CallAdapterFactory.create())

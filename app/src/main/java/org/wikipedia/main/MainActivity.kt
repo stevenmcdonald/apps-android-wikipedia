@@ -32,6 +32,8 @@ class MainActivity : SingleFragmentActivity<MainFragment>(), MainFragment.Callba
 
     private var controlNavTabInFragment = false
 
+    // this receiver listens for the results from the NetworkIntentService started below
+    // it should receive a result if no valid urls are found but not if the service throws an exception
     private val mBroadcastReceiver: BroadcastReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context?, intent: Intent?) {
             if (intent != null && context != null) {
@@ -39,6 +41,8 @@ class MainActivity : SingleFragmentActivity<MainFragment>(), MainFragment.Callba
                 Log.i("BroadcastReceiver", "Received valid urls: " + validUrls?.let {
                     TextUtils.join(", ", it)
                 })
+                // if there are no valid urls, initializeCronetEngine will not be called
+                // the app will start normally and connect to the internet directly if possible
                 if (validUrls != null && !validUrls.isEmpty()) {
                     val envoyUrl = validUrls[0]
                     // select the fastest one (urls are ordered by latency), reInitializeIfNeeded set to false
@@ -59,7 +63,7 @@ class MainActivity : SingleFragmentActivity<MainFragment>(), MainFragment.Callba
         // register to receive test results
         LocalBroadcastManager.getInstance(this).registerReceiver(mBroadcastReceiver, IntentFilter(BROADCAST_VALID_URL_FOUND))
 
-        // TEMP - shadowsocks is not supported in the current build
+        // TEMP - shadowsocks service is not available in the current build
         /*
         val shadowsocksIntent = Intent(this, ShadowsocksService::class.java)
         // put shadowsocks proxy url here, should look like ss://Y2hhY2hhMjAtaWV0Zi1wb2x5MTMwNTpwYXNz@127.0.0.1:1234
@@ -69,10 +73,10 @@ class MainActivity : SingleFragmentActivity<MainFragment>(), MainFragment.Callba
 
         // TEMP - submitting local shadowsocks url with no active service causes an exception
         // val ssUrl = "socks5://127.0.0.1:1080";  // local shadowsocks url, keep this if no port conflicts
-        val envoyUrl = "https://foo"  // put envoy url here
-        // val possibleUrls = listOf<String>(ssUrl, envoyUrl)  // build collection of urls
-        val possibleUrls = listOf<String>(envoyUrl)  // build collection of urls
-        NetworkIntentService.submit(this, possibleUrls)  // submit urls to envoy for evaluation
+        // TODO - initialize one or more string values containing the urls of available https proxies
+        val envoyUrl = "https://foo"
+        val possibleUrls = listOf<String>(envoyUrl)  // add all string values to this list value
+        NetworkIntentService.submit(this, possibleUrls)  // submit list of urls to envoy for evaluation
 
         setImageZoomHelper()
         if (Prefs.isInitialOnboardingEnabled && savedInstanceState == null) {

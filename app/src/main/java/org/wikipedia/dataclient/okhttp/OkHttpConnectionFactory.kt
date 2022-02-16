@@ -34,6 +34,8 @@ object OkHttpConnectionFactory {
                 .addInterceptor(OfflineCacheInterceptor())
                 .addInterceptor(TestStubInterceptor())
                 .addInterceptor(TitleEncodeInterceptor())
+                // this interceptor will be bypassed if no valid proxy urls were found at startup
+                // the app will connect to the internet directly if possible
                 .addInterceptor(CronetInterceptor())
                 .build()
     }
