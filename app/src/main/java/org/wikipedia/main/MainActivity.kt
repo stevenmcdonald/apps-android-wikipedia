@@ -22,10 +22,8 @@ import android.content.IntentFilter
 import android.text.TextUtils
 import android.util.Log
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
-import org.greatfire.envoy.CronetNetworking
-import org.greatfire.envoy.NetworkIntentService
-import org.greatfire.envoy.EXTENDED_DATA_VALID_URLS
-import org.greatfire.envoy.BROADCAST_VALID_URL_FOUND
+import androidx.core.content.ContextCompat
+import org.greatfire.envoy.*
 
 class MainActivity : SingleFragmentActivity<MainFragment>(), MainFragment.Callback {
     private lateinit var binding: ActivityMainBinding
@@ -63,19 +61,19 @@ class MainActivity : SingleFragmentActivity<MainFragment>(), MainFragment.Callba
         // register to receive test results
         LocalBroadcastManager.getInstance(this).registerReceiver(mBroadcastReceiver, IntentFilter(BROADCAST_VALID_URL_FOUND))
 
-        // TEMP - shadowsocks service is not available in the current build
-        /*
+        // start shadowsocks service
         val shadowsocksIntent = Intent(this, ShadowsocksService::class.java)
-        // put shadowsocks proxy url here, should look like ss://Y2hhY2hhMjAtaWV0Zi1wb2x5MTMwNTpwYXNz@127.0.0.1:1234
+        // put shadowsocks proxy url here, should look like ss://Y2hhY2hhMjAtaWV0Zi1wb2x5MTMwNTpwYXNz@127.0.0.1:1234 (base64 encode user/password)
         shadowsocksIntent.putExtra("org.greatfire.envoy.START_SS_LOCAL", "ss://foo");
         ContextCompat.startForegroundService(applicationContext, shadowsocksIntent)
-        */
 
         // TEMP - submitting local shadowsocks url with no active service causes an exception
         // val ssUrl = "socks5://127.0.0.1:1080";  // local shadowsocks url, keep this if no port conflicts
         // TODO - initialize one or more string values containing the urls of available https proxies
         val envoyUrl = "https://foo"
-        val possibleUrls = listOf<String>(envoyUrl)  // add all string values to this list value
+        // Include shadowsocks local proxy url (submitting local shadowsocks url with no active service may cause an exception)
+        val ssUrl = "socks5://127.0.0.1:1080"  // default shadowsocks url, change if there are port conflicts
+        val possibleUrls = listOf<String>(envoyUrl, ssUrl)  // add all string values to this list value
         NetworkIntentService.submit(this, possibleUrls)  // submit list of urls to envoy for evaluation
 
         setImageZoomHelper()
