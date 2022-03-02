@@ -23,6 +23,7 @@ import org.wikipedia.databinding.FragmentWikipediaLanguagesBinding
 import org.wikipedia.json.JsonUtil
 import org.wikipedia.language.LanguagesListActivity
 import org.wikipedia.push.WikipediaFirebaseMessagingService
+import org.wikipedia.settings.Prefs
 import org.wikipedia.settings.SettingsActivity
 import org.wikipedia.views.DefaultViewHolder
 import org.wikipedia.views.MultiSelectActionModeCallback
@@ -68,6 +69,7 @@ class WikipediaLanguagesFragment : Fragment(), WikipediaLanguagesItemView.Callba
             requireActivity().invalidateOptionsMenu()
             adapter.notifyDataSetChanged()
             // explicitly update notification subscription options for any new language wikis
+            Prefs.isPushNotificationOptionsSet = false
             WikipediaFirebaseMessagingService.updateSubscription()
         }
     }
@@ -359,7 +361,7 @@ class WikipediaLanguagesFragment : Fragment(), WikipediaLanguagesItemView.Callba
         const val ACTIVITY_RESULT_LANG_POSITION_DATA = "activity_result_lang_position_data"
         const val ADD_LANGUAGE_INTERACTIONS = "add_language_interactions"
         const val SESSION_TOKEN = "session_token"
-        @JvmStatic
+
         fun newInstance(invokeSource: InvokeSource): WikipediaLanguagesFragment {
             val instance = WikipediaLanguagesFragment()
             instance.arguments = bundleOf(Constants.INTENT_EXTRA_INVOKE_SOURCE to invokeSource)

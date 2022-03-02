@@ -280,7 +280,7 @@
         <activity
             android:name=".talk.TalkTopicsActivity"
             android:label=""
-            android:theme="@style/AppTheme.ActionBar" />
+            android:theme="@style/AppTheme" />
 
         <activity
             android:name=".talk.TalkTopicActivity" />
@@ -289,6 +289,11 @@
             android:name=".diff.ArticleEditDetailsActivity"
             android:label=""
             android:theme="@style/AppTheme.ActionBar"  />
+
+        <activity
+            android:name=".page.customize.CustomizeToolbarActivity"
+            android:label="@string/customize_toolbar_title"
+            android:theme="@style/AppTheme.ActionBar"/>
 
         <activity
             android:name=".notifications.NotificationFilterActivity"

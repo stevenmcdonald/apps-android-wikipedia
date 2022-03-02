@@ -79,10 +79,10 @@ abstract class OkHttpWebViewClient : WebViewClient() {
     @Throws(IOException::class)
     private fun request(request: WebResourceRequest): Response {
         val builder = Request.Builder().url(request.url.toString()).cacheControl(model.cacheControl)
-        for (header in request.requestHeaders.keys) {
-            // remove override user agent from webview
-            // https://stackoverflow.com/questions/47165973/what-does-the-wv-means-on-an-user-agent-string
+        for ((header, value) in request.requestHeaders) {
             if (header == "User-Agent") {
+                // remove override user agent from webview
+                // https://stackoverflow.com/questions/47165973/what-does-the-wv-means-on-an-user-agent-string
                 continue;
             }
             if (header == "If-None-Match" || header == "If-Modified-Since") {
@@ -90,7 +90,7 @@ abstract class OkHttpWebViewClient : WebViewClient() {
                 // we want control of caching for ourselves (it can break OkHttp's caching internals).
                 continue
             }
-            request.requestHeaders[header]?.let {
+            value?.let {
                 builder.header(header, it)
             }
         }
