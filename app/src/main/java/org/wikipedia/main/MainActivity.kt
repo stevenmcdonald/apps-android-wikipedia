@@ -64,16 +64,17 @@ class MainActivity : SingleFragmentActivity<MainFragment>(), MainFragment.Callba
         // start shadowsocks service
         val shadowsocksIntent = Intent(this, ShadowsocksService::class.java)
         // put shadowsocks proxy url here, should look like ss://Y2hhY2hhMjAtaWV0Zi1wb2x5MTMwNTpwYXNz@127.0.0.1:1234 (base64 encode user/password)
-        shadowsocksIntent.putExtra("org.greatfire.envoy.START_SS_LOCAL", "ss://foo");
+        shadowsocksIntent.putExtra("org.greatfire.envoy.START_SS_LOCAL", "ss://Y2hhY2hhMjAtaWV0Zi1wb2x5MTMwNTppZXNvaHZvOHh1Nm9oWW9yaWUydGhhZWhvaFBoOFRoYQ==@172.104.163.54:8388");
         ContextCompat.startForegroundService(applicationContext, shadowsocksIntent)
 
-        // TEMP - submitting local shadowsocks url with no active service causes an exception
-        // val ssUrl = "socks5://127.0.0.1:1080";  // local shadowsocks url, keep this if no port conflicts
-        // TODO - initialize one or more string values containing the urls of available https proxies
-        val envoyUrl = "https://foo"
-        // Include shadowsocks local proxy url (submitting local shadowsocks url with no active service may cause an exception)
+        // TODO - initialize one or more string values containing the urls of available http/https proxies (include trailing slash)
+        val httpUrl = "http://wiki.epochbelt.com/wikipedia/"
+        val httpsUrl = "https://wiki.epochbelt.com/wikipedia/"
+        // include shadowsocks local proxy url (submitting local shadowsocks url with no active service may cause an exception)
         val ssUrl = "socks5://127.0.0.1:1080"  // default shadowsocks url, change if there are port conflicts
-        val possibleUrls = listOf<String>(envoyUrl, ssUrl)  // add all string values to this list value
+
+        val possibleUrls = listOf<String>(httpUrl, httpsUrl, ssUrl)  // add all string values to this list value
+
         NetworkIntentService.submit(this, possibleUrls)  // submit list of urls to envoy for evaluation
 
         setImageZoomHelper()
