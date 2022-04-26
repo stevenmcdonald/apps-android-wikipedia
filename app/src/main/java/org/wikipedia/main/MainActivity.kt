@@ -26,26 +26,71 @@ import androidx.core.content.ContextCompat
 import org.greatfire.envoy.*
 
 class MainActivity : SingleFragmentActivity<MainFragment>(), MainFragment.Callback {
+
+    private val TAG = "MainActivity"
+
     private lateinit var binding: ActivityMainBinding
 
     private var controlNavTabInFragment = false
 
-    // this receiver listens for the results from the NetworkIntentService started below
-    // it should receive a result if no valid urls are found but not if the service throws an exception
+    // initialize one or more string values containing the urls of available http/https proxies (include trailing slash)
+    private val httpUrl = "http://wiki.epochbelt.com/wikipedia/"
+    private val httpsUrl = "https://wiki.epochbelt.com/wikipedia/"
+    // urls for additional proxy services, change if there are port conflicts (do not include trailing slash)
+    private val ssUrl = "socks5://127.0.0.1:1080"
+    // add all string values to this list value
+    private val possibleUrls = listOf<String>(httpUrl, httpsUrl, ssUrl)
+
+    // TODO: revisit and refactor
+    private var waitingForShadowsocks = false
+    private var waitingForUrl = true
+
+    // this receiver should be triggered by a success or failure broadcast from either the
+    // NetworkIntentService (indicating whether submitted urls were valid or invalid) or the
+    // ShadowsocksService (indicating whether the service was successfully started or not
     private val mBroadcastReceiver: BroadcastReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context?, intent: Intent?) {
             if (intent != null && context != null) {
-                val validUrls = intent.getStringArrayListExtra(EXTENDED_DATA_VALID_URLS)
-                Log.i("BroadcastReceiver", "Received valid urls: " + validUrls?.let {
-                    TextUtils.join(", ", it)
-                })
-                // if there are no valid urls, initializeCronetEngine will not be called
-                // the app will start normally and connect to the internet directly if possible
-                if (validUrls != null && !validUrls.isEmpty()) {
-                    val envoyUrl = validUrls[0]
-                    // select the fastest one (urls are ordered by latency), reInitializeIfNeeded set to false
-                    CronetNetworking.initializeCronetEngine(context, envoyUrl)
+                if (intent.action == BROADCAST_URL_VALIDATION_SUCCEEDED) {
+                    val validUrls = intent.getStringArrayListExtra(EXTENDED_DATA_VALID_URLS)
+                    Log.d(TAG, "received valid urls: " + validUrls?.let {
+                        TextUtils.join(", ", it)
+                    })
+                    if (waitingForUrl) {
+                        if (validUrls != null && !validUrls.isEmpty()) {
+                            waitingForUrl = false
+                            val envoyUrl = validUrls[0]
+                            Log.d(TAG, "received valid url, start engine with " + envoyUrl)
+                            // select the fastest one (urls are ordered by latency), reInitializeIfNeeded set to false
+                            CronetNetworking.initializeCronetEngine(context, envoyUrl)
+                        } else {
+                            Log.e(TAG, "received empty list of valid urls")
+                        }
+                    } else {
+                        Log.d(TAG, "already received valid url")
+                    }
+                } else if (intent.action == BROADCAST_URL_VALIDATION_FAILED) {
+                    val invalidUrls = intent.getStringArrayListExtra(EXTENDED_DATA_INVALID_URLS)
+                    Log.e(TAG, "received invalid urls: " + invalidUrls?.let {
+                        TextUtils.join(", ", it)
+                    })
+                    // TODO: log or show error if all possible urls were invalid?
+                } else if (intent.action == ShadowsocksService.SHADOWSOCKS_SERVICE_BROADCAST) {
+                    waitingForShadowsocks = false
+                    var shadowsocksResult = intent.getIntExtra(ShadowsocksService.SHADOWSOCKS_SERVICE_RESULT, 0)
+                    if (shadowsocksResult > 0) {
+                        Log.d(TAG, "shadowsocks service started ok")
+                    } else {
+                        Log.e(TAG, "shadowsocks service failed to start")
+                    }
+                    // service was started if possible, submit list of urls to envoy for evaluation
+                    waitingForUrl = true
+                    NetworkIntentService.submit(this@MainActivity, possibleUrls)
+                } else {
+                    Log.e(TAG, "received unexpected intent: " + intent.action)
                 }
+            } else {
+                Log.e(TAG, "receiver triggered but context or intent was null")
             }
         }
     }
@@ -59,23 +104,26 @@ class MainActivity : SingleFragmentActivity<MainFragment>(), MainFragment.Callba
         super.onCreate(savedInstanceState)
 
         // register to receive test results
-        LocalBroadcastManager.getInstance(this).registerReceiver(mBroadcastReceiver, IntentFilter(BROADCAST_VALID_URL_FOUND))
+        LocalBroadcastManager.getInstance(this).registerReceiver(mBroadcastReceiver, IntentFilter().apply {
+            addAction(BROADCAST_URL_VALIDATION_SUCCEEDED)
+            addAction(BROADCAST_URL_VALIDATION_FAILED)
+            addAction(ShadowsocksService.SHADOWSOCKS_SERVICE_BROADCAST)
+        })
 
-        // start shadowsocks service
-        val shadowsocksIntent = Intent(this, ShadowsocksService::class.java)
-        // put shadowsocks proxy url here, should look like ss://Y2hhY2hhMjAtaWV0Zi1wb2x5MTMwNTpwYXNz@127.0.0.1:1234 (base64 encode user/password)
-        shadowsocksIntent.putExtra("org.greatfire.envoy.START_SS_LOCAL", "ss://Y2hhY2hhMjAtaWV0Zi1wb2x5MTMwNTppZXNvaHZvOHh1Nm9oWW9yaWUydGhhZWhvaFBoOFRoYQ==@172.104.163.54:8388");
-        ContextCompat.startForegroundService(applicationContext, shadowsocksIntent)
-
-        // TODO - initialize one or more string values containing the urls of available http/https proxies (include trailing slash)
-        val httpUrl = "http://wiki.epochbelt.com/wikipedia/"
-        val httpsUrl = "https://wiki.epochbelt.com/wikipedia/"
-        // include shadowsocks local proxy url (submitting local shadowsocks url with no active service may cause an exception)
-        val ssUrl = "socks5://127.0.0.1:1080"  // default shadowsocks url, change if there are port conflicts
-
-        val possibleUrls = listOf<String>(httpUrl, httpsUrl, ssUrl)  // add all string values to this list value
-
-        NetworkIntentService.submit(this, possibleUrls)  // submit list of urls to envoy for evaluation
+        if (possibleUrls.contains(ssUrl)) {
+            Log.d(TAG, "shadowsocks service needed, submit urls after starting")
+            // start shadowsocks service
+            val shadowsocksIntent = Intent(this, ShadowsocksService::class.java)
+            // put shadowsocks proxy url here, should look like ss://Y2hhY2hhMjAtaWV0Zi1wb2x5MTMwNTpwYXNz@127.0.0.1:1234 (base64 encode user/password)
+            shadowsocksIntent.putExtra("org.greatfire.envoy.START_SS_LOCAL", "ss://Y2hhY2hhMjAtaWV0Zi1wb2x5MTMwNTppZXNvaHZvOHh1Nm9oWW9yaWUydGhhZWhvaFBoOFRoYQ==@172.104.163.54:8388");
+            waitingForShadowsocks = true
+            ContextCompat.startForegroundService(applicationContext, shadowsocksIntent)
+        } else {
+            Log.d(TAG, "no services needed, submit urls immediately")
+            // submit list of urls to envoy for evaluation
+            waitingForUrl = true
+            NetworkIntentService.submit(this, possibleUrls)
+        }
 
         setImageZoomHelper()
         if (Prefs.isInitialOnboardingEnabled && savedInstanceState == null) {
