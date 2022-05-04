@@ -2,118 +2,93 @@ package org.wikipedia.diff
 
 import android.app.AlertDialog
 import android.content.res.ColorStateList
-import android.graphics.Typeface
+import android.graphics.Rect
 import android.os.Bundle
-import android.text.SpannableStringBuilder
-import android.text.method.ScrollingMovementMethod
-import android.text.style.BackgroundColorSpan
-import android.text.style.ForegroundColorSpan
-import android.text.style.StyleSpan
 import android.view.*
-import android.view.View.*
 import android.widget.FrameLayout
+import android.widget.ImageView
 import androidx.annotation.DrawableRes
+import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.content.res.AppCompatResources
-import androidx.appcompat.widget.AppCompatImageView
 import androidx.core.content.ContextCompat
 import androidx.core.os.bundleOf
+import androidx.core.view.isVisible
 import androidx.core.widget.ImageViewCompat
+import androidx.core.widget.NestedScrollView
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
+import androidx.recyclerview.widget.LinearLayoutManager
 import com.google.android.material.button.MaterialButton
 import org.wikipedia.Constants.InvokeSource
 import org.wikipedia.R
+import org.wikipedia.analytics.eventplatform.EditHistoryInteractionEvent
 import org.wikipedia.auth.AccountUtil
 import org.wikipedia.databinding.FragmentArticleEditDetailsBinding
-import org.wikipedia.dataclient.WikiSite
 import org.wikipedia.dataclient.mwapi.MwQueryPage.Revision
-import org.wikipedia.dataclient.restbase.DiffResponse
 import org.wikipedia.dataclient.watch.Watch
 import org.wikipedia.history.HistoryEntry
-import org.wikipedia.language.AppLanguageLookUpTable
 import org.wikipedia.page.ExclusiveBottomSheetPresenter
 import org.wikipedia.page.Namespace
 import org.wikipedia.page.PageActivity
 import org.wikipedia.page.PageTitle
 import org.wikipedia.page.linkpreview.LinkPreviewDialog
 import org.wikipedia.readinglist.AddToReadingListDialog
-import org.wikipedia.staticdata.UserTalkAliasData
+import org.wikipedia.staticdata.UserAliasData
 import org.wikipedia.talk.TalkTopicsActivity
+import org.wikipedia.talk.UserTalkPopupHelper
 import org.wikipedia.util.*
 import org.wikipedia.util.ClipboardUtil.setPlainText
 import org.wikipedia.util.log.L
 import org.wikipedia.watchlist.WatchlistExpiry
 import org.wikipedia.watchlist.WatchlistExpiryDialog
-import java.nio.charset.StandardCharsets
 
 class ArticleEditDetailsFragment : Fragment(), WatchlistExpiryDialog.Callback, LinkPreviewDialog.Callback {
     private var _binding: FragmentArticleEditDetailsBinding? = null
     private val binding get() = _binding!!
-    private lateinit var articlePageTitle: PageTitle
-    private lateinit var languageCode: String
-    private lateinit var wikiSite: WikiSite
-    private var revisionId: Long = 0
-    private var diffSize: Int = 0
-    private var username: String? = null
-    private var newerRevisionId: Long = 0
-    private var olderRevisionId: Long = 0
-    private var currentRevision: Revision? = null
 
     private var isWatched = false
     private var hasWatchlistExpiry = false
     private val bottomSheetPresenter = ExclusiveBottomSheetPresenter()
 
-    private val viewModel: ArticleEditDetailsViewModel by viewModels()
-
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        revisionId = requireArguments().getLong(EXTRA_EDIT_REVISION_ID, 0)
-        languageCode = requireArguments().getString(EXTRA_EDIT_LANGUAGE_CODE, AppLanguageLookUpTable.FALLBACK_LANGUAGE_CODE)
-        wikiSite = WikiSite.forLanguageCode(languageCode)
-        articlePageTitle = PageTitle(requireArguments().getString(EXTRA_ARTICLE_TITLE, ""), wikiSite)
-        viewModel.setup(articlePageTitle, revisionId)
-    }
+    private val viewModel: ArticleEditDetailsViewModel by viewModels { ArticleEditDetailsViewModel.Factory(requireArguments()) }
+    private var editHistoryInteractionEvent: EditHistoryInteractionEvent? = null
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
         super.onCreateView(inflater, container, savedInstanceState)
         _binding = FragmentArticleEditDetailsBinding.inflate(inflater, container, false)
+        (requireActivity() as AppCompatActivity).setSupportActionBar(binding.toolbar)
+
+        binding.diffRecyclerView.layoutManager = LinearLayoutManager(requireContext())
+        FeedbackUtil.setButtonLongPressToast(binding.newerIdButton, binding.olderIdButton)
         return binding.root
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         setHasOptionsMenu(true)
-        setUpInitialUI()
         setUpListeners()
         setLoadingState()
 
+        binding.articleTitleView.text = StringUtil.fromHtml(viewModel.pageTitle.displayText)
+
         viewModel.watchedStatus.observe(viewLifecycleOwner) {
             if (it is Resource.Success) {
-                isWatched = it.data.query?.firstPage()?.watched ?: false
-                hasWatchlistExpiry = it.data.query?.firstPage()?.hasWatchlistExpiry() ?: false
-                updateWatchlistButtonUI()
+                if (editHistoryInteractionEvent == null) {
+                    editHistoryInteractionEvent = EditHistoryInteractionEvent(viewModel.pageTitle.wikiSite.dbName(), viewModel.pageId)
+                    editHistoryInteractionEvent?.logRevision()
+                }
+                isWatched = it.data.watched
+                hasWatchlistExpiry = it.data.hasWatchlistExpiry()
             } else if (it is Resource.Error) {
                 setErrorState(it.throwable)
             }
+            requireActivity().invalidateOptionsMenu()
         }
 
         viewModel.revisionDetails.observe(viewLifecycleOwner) {
             if (it is Resource.Success) {
-                currentRevision = it.data[0]
-                revisionId = currentRevision!!.revId
-                username = currentRevision!!.user
-                newerRevisionId = if (it.data.size < 2) {
-                    -1
-                } else {
-                    it.data[1].revId
-                }
-                olderRevisionId = currentRevision!!.parentRevId
-                updateUI()
-                if (olderRevisionId > 0L) {
-                    viewModel.getDiffText(wikiSite, olderRevisionId, revisionId)
-                } else {
-                    binding.progressBar.visibility = INVISIBLE
-                }
+                updateDiffCharCountView(viewModel.diffSize)
+                updateAfterRevisionFetchSuccess()
             } else if (it is Resource.Error) {
                 setErrorState(it.throwable)
             }
@@ -121,10 +96,9 @@ class ArticleEditDetailsFragment : Fragment(), WatchlistExpiryDialog.Callback, L
 
         viewModel.diffText.observe(viewLifecycleOwner) {
             if (it is Resource.Success) {
-                binding.diffText.text = createSpannable(it.data.diff)
-                updateDiffCharCountView(diffSize)
-                binding.diffCharacterCountView.visibility = VISIBLE
-                binding.progressBar.visibility = INVISIBLE
+                binding.diffRecyclerView.adapter = DiffUtil.DiffLinesAdapter(DiffUtil.buildDiffLinesList(requireContext(), it.data.diff))
+                updateAfterDiffFetchSuccess()
+                binding.progressBar.isVisible = false
             } else if (it is Resource.Error) {
                 setErrorState(it.throwable)
             }
@@ -132,12 +106,15 @@ class ArticleEditDetailsFragment : Fragment(), WatchlistExpiryDialog.Callback, L
 
         viewModel.thankStatus.observe(viewLifecycleOwner) {
             if (it is Resource.Success) {
-                FeedbackUtil.showMessage(requireActivity(), getString(R.string.thank_success_message, username))
+                FeedbackUtil.showMessage(requireActivity(), getString(R.string.thank_success_message,
+                        viewModel.revisionTo?.user))
                 setButtonTextAndIconColor(binding.thankButton, ResourceUtil.getThemedColor(requireContext(),
                         R.attr.material_theme_de_emphasised_color))
-                binding.thankButton.isClickable = false
+                binding.thankButton.isEnabled = false
+                editHistoryInteractionEvent?.logThankSuccess()
             } else if (it is Resource.Error) {
                 setErrorState(it.throwable)
+                editHistoryInteractionEvent?.logThankFail()
             }
         }
 
@@ -146,15 +123,42 @@ class ArticleEditDetailsFragment : Fragment(), WatchlistExpiryDialog.Callback, L
                 val firstWatch = it.data.getFirst()
                 if (firstWatch != null) {
                     showWatchlistSnackbar(viewModel.lastWatchExpiry, firstWatch)
-                    updateWatchlistButtonUI()
                 }
             } else if (it is Resource.Error) {
                 setErrorState(it.throwable)
-                binding.watchButton.isCheckable = true
+            }
+            requireActivity().invalidateOptionsMenu()
+        }
+
+        viewModel.undoEditResponse.observe(viewLifecycleOwner) {
+            binding.progressBar.isVisible = false
+            if (it is Resource.Success) {
+                setLoadingState()
+                viewModel.getRevisionDetails(it.data.edit!!.newRevId)
+                FeedbackUtil.makeSnackbar(requireActivity(), getString(R.string.revision_undo_success), FeedbackUtil.LENGTH_DEFAULT).show()
+                editHistoryInteractionEvent?.logUndoSuccess()
+            } else if (it is Resource.Error) {
+                it.throwable.printStackTrace()
+                FeedbackUtil.showError(requireActivity(), it.throwable)
+                editHistoryInteractionEvent?.logUndoFail()
             }
         }
 
-        L10nUtil.setConditionalLayoutDirection(requireView(), languageCode)
+        L10nUtil.setConditionalLayoutDirection(requireView(), viewModel.pageTitle.wikiSite.languageCode)
+
+        binding.scrollContainer.setOnScrollChangeListener(NestedScrollView.OnScrollChangeListener { _, _, scrollY, _, _ ->
+            val bounds = Rect()
+            binding.contentContainer.offsetDescendantRectToMyCoords(binding.articleTitleDivider, bounds)
+            if (scrollY > bounds.top) {
+                binding.overlayRevisionDetailsView.visibility = View.VISIBLE
+                if (binding.toolbarTitleView.text.isNullOrEmpty()) {
+                    binding.toolbarTitleView.text = getString(R.string.revision_diff_compare_title, StringUtil.fromHtml(viewModel.pageTitle.displayText))
+                }
+            } else {
+                binding.overlayRevisionDetailsView.visibility = View.INVISIBLE
+                binding.toolbarTitleView.text = ""
+            }
+        })
     }
 
     override fun onDestroyView() {
@@ -164,50 +168,90 @@ class ArticleEditDetailsFragment : Fragment(), WatchlistExpiryDialog.Callback, L
 
     private fun setUpListeners() {
         binding.articleTitleView.setOnClickListener {
-            if (articlePageTitle.namespace() == Namespace.USER_TALK || articlePageTitle.namespace() == Namespace.TALK) {
-                startActivity(TalkTopicsActivity.newIntent(requireContext(), articlePageTitle, InvokeSource.DIFF_ACTIVITY))
+            if (viewModel.pageTitle.namespace() == Namespace.USER_TALK || viewModel.pageTitle.namespace() == Namespace.TALK) {
+                startActivity(TalkTopicsActivity.newIntent(requireContext(), viewModel.pageTitle, InvokeSource.DIFF_ACTIVITY))
             } else {
                 bottomSheetPresenter.show(childFragmentManager, LinkPreviewDialog.newInstance(
-                        HistoryEntry(articlePageTitle, HistoryEntry.SOURCE_EDIT_DIFF_DETAILS), null))
+                        HistoryEntry(viewModel.pageTitle, HistoryEntry.SOURCE_EDIT_DIFF_DETAILS), null))
             }
         }
         binding.newerIdButton.setOnClickListener {
-            revisionId = newerRevisionId
             setLoadingState()
-            viewModel.getRevisionDetails(articlePageTitle, revisionId)
+            viewModel.goForward()
+            editHistoryInteractionEvent?.logNewerEditChevronClick()
         }
         binding.olderIdButton.setOnClickListener {
-            revisionId = olderRevisionId
             setLoadingState()
-            viewModel.getRevisionDetails(articlePageTitle, revisionId)
+            viewModel.goBackward()
+            editHistoryInteractionEvent?.logOlderEditChevronClick()
         }
-        binding.watchButton.setOnClickListener {
-            binding.watchButton.isCheckable = false
-            viewModel.watchOrUnwatch(articlePageTitle, isWatched, WatchlistExpiry.NEVER, isWatched)
+
+        binding.usernameFromButton.setOnClickListener {
+            showUserPopupMenu(viewModel.revisionFrom, binding.usernameFromButton)
         }
-        binding.usernameButton.setOnClickListener {
-            if (AccountUtil.isLoggedIn && username != null) {
-                startActivity(TalkTopicsActivity.newIntent(requireActivity(),
-                        PageTitle(UserTalkAliasData.valueFor(languageCode),
-                                username!!, wikiSite), InvokeSource.DIFF_ACTIVITY))
+
+        binding.usernameToButton.setOnClickListener {
+            showUserPopupMenu(viewModel.revisionTo, binding.usernameToButton)
+        }
+
+        binding.thankButton.setOnClickListener {
+            showThankDialog()
+            editHistoryInteractionEvent?.logThankTry()
+        }
+
+        binding.undoButton.isVisible = ReleaseUtil.isPreBetaRelease
+        binding.undoButton.setOnClickListener {
+            showUndoDialog()
+            editHistoryInteractionEvent?.logUndoTry()
+        }
+
+        binding.errorView.backClickListener = View.OnClickListener { requireActivity().finish() }
+    }
+
+    override fun onCreateOptionsMenu(menu: Menu, inflater: MenuInflater) {
+        inflater.inflate(R.menu.menu_edit_details, menu)
+    }
+
+    override fun onPrepareOptionsMenu(menu: Menu) {
+        super.onPrepareOptionsMenu(menu)
+        val watchlistItem = menu.findItem(R.id.menu_add_watchlist)
+        watchlistItem.title = getString(if (isWatched) R.string.menu_page_unwatch else R.string.menu_page_watch)
+        watchlistItem.setIcon(getWatchlistIcon(isWatched, hasWatchlistExpiry))
+    }
+
+    override fun onOptionsItemSelected(item: MenuItem): Boolean {
+        super.onOptionsItemSelected(item)
+        return when (item.itemId) {
+            R.id.menu_share_edit -> {
+                ShareUtil.shareText(requireContext(), PageTitle(viewModel.pageTitle.prefixedText,
+                        viewModel.pageTitle.wikiSite), viewModel.revisionToId, viewModel.revisionFromId)
+                editHistoryInteractionEvent?.logShareClick()
+                true
             }
+            R.id.menu_add_watchlist -> {
+                viewModel.watchOrUnwatch(isWatched, WatchlistExpiry.NEVER, isWatched)
+                if (isWatched) editHistoryInteractionEvent?.logUnwatchClick() else editHistoryInteractionEvent?.logWatchClick()
+                true
+            }
+            else -> super.onOptionsItemSelected(item)
         }
-        binding.thankButton.setOnClickListener { showThankDialog() }
-        binding.errorView.backClickListener = OnClickListener { requireActivity().finish() }
+    }
+
+    private fun showUserPopupMenu(revision: Revision?, anchorView: View) {
+        revision?.let {
+            UserTalkPopupHelper.show(requireActivity() as AppCompatActivity, bottomSheetPresenter,
+                    PageTitle(UserAliasData.valueFor(viewModel.pageTitle.wikiSite.languageCode),
+                            it.user, viewModel.pageTitle.wikiSite), it.isAnon, anchorView,
+                    InvokeSource.DIFF_ACTIVITY, HistoryEntry.SOURCE_EDIT_DIFF_DETAILS)
+        }
     }
 
     private fun setErrorState(t: Throwable) {
         L.e(t)
         binding.errorView.setError(t)
-        binding.errorView.visibility = VISIBLE
-        binding.revisionDetailsView.visibility = GONE
-        binding.progressBar.visibility = INVISIBLE
-    }
-
-    private fun setUpInitialUI() {
-        binding.diffText.movementMethod = ScrollingMovementMethod()
-        binding.articleTitleView.text = articlePageTitle.displayText
-        updateDiffCharCountView(diffSize)
+        binding.errorView.isVisible = true
+        binding.revisionDetailsView.isVisible = false
+        binding.progressBar.isVisible = false
     }
 
     private fun updateDiffCharCountView(diffSize: Int) {
@@ -221,55 +265,51 @@ class ArticleEditDetailsFragment : Fragment(), WatchlistExpiryDialog.Callback, L
     }
 
     private fun setLoadingState() {
-        binding.progressBar.visibility = VISIBLE
-        binding.usernameButton.visibility = INVISIBLE
-        binding.thankButton.visibility = INVISIBLE
-        binding.editComment.visibility = INVISIBLE
-        binding.diffText.visibility = INVISIBLE
-        binding.diffCharacterCountView.visibility = INVISIBLE
+        binding.progressBar.isVisible = true
+        binding.revisionDetailsView.isVisible = false
+        binding.diffRecyclerView.isVisible = false
     }
 
-    private fun updateUI() {
-        binding.diffText.scrollTo(0, 0)
-        binding.diffText.text = ""
-        binding.usernameButton.text = currentRevision!!.user
-        binding.editTimestamp.text = DateUtil.getDateAndTimeWithPipe(DateUtil.iso8601DateParse(currentRevision!!.timeStamp))
-        binding.editComment.text = currentRevision!!.comment
-        binding.newerIdButton.isClickable = newerRevisionId != -1L
-        binding.olderIdButton.isClickable = olderRevisionId != 0L
-        setEnableDisableTint(binding.newerIdButton, newerRevisionId == -1L)
-        setEnableDisableTint(binding.olderIdButton, olderRevisionId == 0L)
+    private fun updateAfterRevisionFetchSuccess() {
+        viewModel.revisionFrom?.let {
+            binding.usernameFromButton.text = it.user
+            binding.revisionFromTimestamp.text = DateUtil.getDateAndTimeWithPipe(DateUtil.iso8601DateParse(it.timeStamp))
+            binding.overlayRevisionFromTimestamp.text = binding.revisionFromTimestamp.text
+            binding.revisionFromEditComment.text = StringUtil.fromHtml(it.parsedcomment.trim())
+        }
+
+        viewModel.revisionTo?.let {
+            binding.usernameToButton.text = it.user
+            binding.revisionToTimestamp.text = DateUtil.getDateAndTimeWithPipe(DateUtil.iso8601DateParse(it.timeStamp))
+            binding.overlayRevisionToTimestamp.text = binding.revisionToTimestamp.text
+            binding.revisionToEditComment.text = StringUtil.fromHtml(it.parsedcomment.trim())
+        }
+
+        setEnableDisableTint(binding.newerIdButton, !viewModel.canGoForward)
+        setEnableDisableTint(binding.olderIdButton, viewModel.revisionFromId == 0L)
+        binding.newerIdButton.isEnabled = viewModel.canGoForward
+        binding.olderIdButton.isEnabled = viewModel.revisionFromId != 0L
+
         setButtonTextAndIconColor(binding.thankButton, ResourceUtil.getThemedColor(requireContext(), R.attr.colorAccent))
-        binding.thankButton.isClickable = true
-        requireActivity().invalidateOptionsMenu()
-        maybeHideThankButton()
 
-        binding.usernameButton.visibility = VISIBLE
-        binding.thankButton.visibility = VISIBLE
-        binding.editComment.visibility = VISIBLE
-        binding.diffText.visibility = VISIBLE
+        binding.thankButton.isEnabled = true
+        binding.thankButton.isVisible = AccountUtil.isLoggedIn && !AccountUtil.userName.equals(viewModel.revisionTo?.user)
+        binding.revisionDetailsView.isVisible = true
     }
 
-    private fun maybeHideThankButton() {
-        binding.thankButton.visibility = if (AccountUtil.userName.equals(currentRevision?.user)) GONE else VISIBLE
+    private fun updateAfterDiffFetchSuccess() {
+        binding.diffRecyclerView.isVisible = true
     }
 
-    private fun setEnableDisableTint(view: AppCompatImageView, isDisabled: Boolean) {
+    private fun setEnableDisableTint(view: ImageView, isDisabled: Boolean) {
         ImageViewCompat.setImageTintList(view, AppCompatResources.getColorStateList(requireContext(),
             ResourceUtil.getThemedAttributeId(requireContext(), if (isDisabled)
-                R.attr.material_theme_de_emphasised_color else R.attr.primary_text_color)))
+                R.attr.material_theme_de_emphasised_color else R.attr.material_theme_secondary_color)))
     }
 
     private fun setButtonTextAndIconColor(view: MaterialButton, themedColor: Int) {
         view.setTextColor(themedColor)
         view.iconTint = ColorStateList.valueOf(themedColor)
-    }
-
-    private fun updateWatchlistButtonUI() {
-        setButtonTextAndIconColor(binding.watchButton, ResourceUtil.getThemedColor(requireContext(),
-                if (isWatched) R.attr.color_group_68 else R.attr.colorAccent))
-        binding.watchButton.text = getString(if (isWatched) R.string.watchlist_details_watching_label else R.string.watchlist_details_watch_label)
-        binding.watchButton.setIconResource(getWatchlistIcon(isWatched, hasWatchlistExpiry))
     }
 
     @DrawableRes
@@ -287,11 +327,11 @@ class ArticleEditDetailsFragment : Fragment(), WatchlistExpiryDialog.Callback, L
         isWatched = watch.watched
         hasWatchlistExpiry = expiry != WatchlistExpiry.NEVER
         if (watch.unwatched) {
-            FeedbackUtil.showMessage(this, getString(R.string.watchlist_page_removed_from_watchlist_snackbar, articlePageTitle.displayText))
+            FeedbackUtil.showMessage(this, getString(R.string.watchlist_page_removed_from_watchlist_snackbar, viewModel.pageTitle.displayText))
         } else if (watch.watched) {
             val snackbar = FeedbackUtil.makeSnackbar(requireActivity(),
                     getString(R.string.watchlist_page_add_to_watchlist_snackbar,
-                            articlePageTitle.displayText,
+                            viewModel.pageTitle.displayText,
                             getString(expiry.stringId)),
                     FeedbackUtil.LENGTH_DEFAULT)
             if (!viewModel.watchlistExpiryChanged) {
@@ -302,7 +342,6 @@ class ArticleEditDetailsFragment : Fragment(), WatchlistExpiryDialog.Callback, L
             }
             snackbar.show()
         }
-        binding.watchButton.isCheckable = true
     }
 
     private fun showThankDialog() {
@@ -310,9 +349,11 @@ class ArticleEditDetailsFragment : Fragment(), WatchlistExpiryDialog.Callback, L
         val dialog: AlertDialog = AlertDialog.Builder(activity)
                 .setView(parent)
                 .setPositiveButton(R.string.thank_dialog_positive_button_text) { _, _ ->
-                    viewModel.sendThanks(wikiSite, revisionId)
+                    viewModel.sendThanks(viewModel.pageTitle.wikiSite, viewModel.revisionToId)
                 }
-                .setNegativeButton(R.string.thank_dialog_negative_button_text, null)
+                .setNegativeButton(R.string.thank_dialog_negative_button_text) { _, _ ->
+                    editHistoryInteractionEvent?.logThankCancel()
+                }
                 .create()
         dialog.layoutInflater.inflate(R.layout.view_thank_dialog, parent)
         dialog.setOnShowListener {
@@ -322,118 +363,18 @@ class ArticleEditDetailsFragment : Fragment(), WatchlistExpiryDialog.Callback, L
         dialog.show()
     }
 
-    private fun createSpannable(diffs: List<DiffResponse.DiffItem>): CharSequence {
-        val spannableString = SpannableStringBuilder()
-        diffSize = 0
-        for (diff in diffs) {
-            val prefixLength = spannableString.length
-            spannableString.append(diff.text.ifEmpty { "\n" })
-            when (diff.type) {
-                DiffResponse.DIFF_TYPE_LINE_ADDED -> {
-                    diffSize += diff.text.length + 1
-                    updateDiffTextDecor(spannableString, true, prefixLength, prefixLength + diff.text.length)
-                }
-                DiffResponse.DIFF_TYPE_LINE_REMOVED -> {
-                    diffSize -= diff.text.length + 1
-                    updateDiffTextDecor(spannableString, false, prefixLength, prefixLength + diff.text.length)
-                }
-                DiffResponse.DIFF_TYPE_PARAGRAPH_MOVED_FROM -> {
-                    diffSize -= diff.text.length + 1
-                    updateDiffTextDecor(spannableString, false, prefixLength, prefixLength + diff.text.length)
-                }
-                DiffResponse.DIFF_TYPE_PARAGRAPH_MOVED_TO -> {
-                    diffSize += diff.text.length + 1
-                    updateDiffTextDecor(spannableString, true, prefixLength, prefixLength + diff.text.length)
-                }
-            }
-            if (diff.highlightRanges.isNotEmpty()) {
-                for (highlightRange in diff.highlightRanges) {
-                    val indices = utf8Indices(diff.text)
-                    val highlightRangeStart = indices[highlightRange.start]
-                    val highlightRangeEnd = if (highlightRange.start + highlightRange.length < indices.size) indices[highlightRange.start + highlightRange.length] else indices[indices.size - 1]
-
-                    if (highlightRange.type == DiffResponse.HIGHLIGHT_TYPE_ADD) {
-                        diffSize += highlightRange.length
-                        updateDiffTextDecor(spannableString, true, prefixLength + highlightRangeStart, prefixLength + highlightRangeEnd)
-                    } else {
-                        diffSize -= highlightRange.length
-                        updateDiffTextDecor(spannableString, false, prefixLength + highlightRangeStart, prefixLength + highlightRangeEnd)
-                    }
-                }
-            }
-            spannableString.append("\n")
-        }
-        return spannableString
-    }
-
-    private fun updateDiffTextDecor(spannableText: SpannableStringBuilder, isAddition: Boolean, start: Int, end: Int) {
-        val boldStyle = StyleSpan(Typeface.BOLD)
-        val foregroundAddedColor = ForegroundColorSpan(ResourceUtil.getThemedColor(requireContext(), R.attr.color_group_64))
-        val foregroundRemovedColor = ForegroundColorSpan(ResourceUtil.getThemedColor(requireContext(), R.attr.color_group_66))
-        spannableText.setSpan(BackgroundColorSpan(ResourceUtil.getThemedColor(requireContext(),
-                if (isAddition) R.attr.color_group_65 else R.attr.color_group_67)), start, end, 0)
-        spannableText.setSpan(boldStyle, start, end, 0)
-        spannableText.setSpan(if (isAddition) foregroundAddedColor else foregroundRemovedColor, start, end, 0)
-    }
-
-    private fun utf8Indices(s: String): IntArray {
-        val indices = IntArray(s.toByteArray(StandardCharsets.UTF_8).size)
-        var ptr = 0
-        var count = 0
-        for (i in s.indices) {
-            val c = s.codePointAt(i)
-            when {
-                c <= 0x7F -> count = 1
-                c <= 0x7FF -> count = 2
-                c <= 0xFFFF -> count = 3
-                c <= 0x1FFFFF -> count = 4
-            }
-            for (j in 0 until count) {
-                indices[ptr++] = i
+    private fun showUndoDialog() {
+        val dialog = UndoEditDialog(editHistoryInteractionEvent, requireActivity()) { text ->
+            viewModel.revisionTo?.let {
+                binding.progressBar.isVisible = true
+                viewModel.undoEdit(viewModel.pageTitle, it.user, text.toString(), viewModel.revisionToId, 0)
             }
         }
-        return indices
-    }
-
-    override fun onPrepareOptionsMenu(menu: Menu) {
-        super.onPrepareOptionsMenu(menu)
-        val userProfileMenuItem = menu.findItem(R.id.menu_user_profile_page)
-        currentRevision?.let {
-            if (it.isAnon) {
-                userProfileMenuItem.isVisible = false
-            } else {
-                userProfileMenuItem.title = getString(R.string.menu_option_user_profile, it.user)
-            }
-            menu.findItem(R.id.menu_user_contributions_page).title = getString(R.string.menu_option_user_contributions, it.user)
-        }
-    }
-
-    override fun onCreateOptionsMenu(menu: Menu, inflater: MenuInflater) {
-        inflater.inflate(R.menu.menu_edit_details, menu)
-    }
-
-    override fun onOptionsItemSelected(item: MenuItem): Boolean {
-        super.onOptionsItemSelected(item)
-        return when (item.itemId) {
-            R.id.menu_share_edit -> {
-                ShareUtil.shareText(requireContext(), PageTitle(articlePageTitle.prefixedText,
-                        wikiSite), revisionId, olderRevisionId)
-                true
-            }
-            R.id.menu_user_profile_page -> {
-                FeedbackUtil.showUserProfilePage(requireContext(), username!!, languageCode)
-                true
-            }
-            R.id.menu_user_contributions_page -> {
-                FeedbackUtil.showUserContributionsPage(requireContext(), username!!, languageCode)
-                true
-            }
-            else -> super.onOptionsItemSelected(item)
-        }
+        dialog.show()
     }
 
     override fun onExpirySelect(expiry: WatchlistExpiry) {
-        viewModel.watchOrUnwatch(articlePageTitle, isWatched, expiry, false)
+        viewModel.watchOrUnwatch(isWatched, expiry, false)
         bottomSheetPresenter.dismiss(childFragmentManager)
     }
 
@@ -464,15 +405,11 @@ class ArticleEditDetailsFragment : Fragment(), WatchlistExpiryDialog.Callback, L
     }
 
     companion object {
-        const val EXTRA_ARTICLE_TITLE = "articleTitle"
-        const val EXTRA_EDIT_REVISION_ID = "revisionId"
-        const val EXTRA_EDIT_LANGUAGE_CODE = "languageCode"
-
-        fun newInstance(articleTitle: String, revisionId: Long, languageCode: String): ArticleEditDetailsFragment {
+        fun newInstance(title: PageTitle, revisionFrom: Long, revisionTo: Long): ArticleEditDetailsFragment {
             return ArticleEditDetailsFragment().apply {
-                arguments = bundleOf(EXTRA_ARTICLE_TITLE to articleTitle,
-                        EXTRA_EDIT_REVISION_ID to revisionId,
-                        EXTRA_EDIT_LANGUAGE_CODE to languageCode)
+                arguments = bundleOf(ArticleEditDetailsActivity.EXTRA_ARTICLE_TITLE to title,
+                        ArticleEditDetailsActivity.EXTRA_EDIT_REVISION_FROM to revisionFrom,
+                        ArticleEditDetailsActivity.EXTRA_EDIT_REVISION_TO to revisionTo)
             }
         }
     }

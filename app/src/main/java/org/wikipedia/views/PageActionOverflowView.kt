@@ -9,6 +9,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.FrameLayout
 import android.widget.PopupWindow
+import androidx.core.view.doOnDetach
 import androidx.core.widget.PopupWindowCompat
 import com.google.android.material.textview.MaterialTextView
 import org.wikipedia.R
@@ -62,7 +63,7 @@ class PageActionOverflowView(context: Context) : FrameLayout(context) {
             val enabled = model.page != null && (!model.shouldLoadAsMobileWeb || (model.shouldLoadAsMobileWeb && pageActionItem.isAvailableOnMobileWeb))
             when (pageActionItem) {
                 PageActionItem.ADD_TO_WATCHLIST -> {
-                    view.setText(if (model.isWatched) R.string.menu_page_watched else R.string.menu_page_watch)
+                    view.setText(if (model.isWatched) R.string.menu_page_unwatch else R.string.menu_page_watch)
                     view.setCompoundDrawablesWithIntrinsicBounds(PageActionItem.watchlistIcon(model.isWatched, model.hasWatchlistExpiry), 0, 0, 0)
                     view.visibility = if (enabled && AccountUtil.isLoggedIn) VISIBLE else GONE
                 }
@@ -74,6 +75,10 @@ class PageActionOverflowView(context: Context) : FrameLayout(context) {
                     view.visibility = if (enabled) VISIBLE else GONE
                 }
             }
+        }
+
+        anchorView.doOnDetach {
+            dismissPopupWindowHost()
         }
     }
 

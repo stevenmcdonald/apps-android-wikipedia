@@ -6,7 +6,6 @@ import android.appwidget.AppWidgetProvider
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
-import android.text.TextUtils
 import android.text.style.URLSpan
 import android.widget.RemoteViews
 import androidx.core.text.getSpans
@@ -16,6 +15,7 @@ import org.wikipedia.Constants
 import org.wikipedia.R
 import org.wikipedia.WikipediaApp
 import org.wikipedia.dataclient.ServiceFactory
+import org.wikipedia.dataclient.WikiSite
 import org.wikipedia.dataclient.mwapi.MwParseResponse
 import org.wikipedia.dataclient.page.PageSummary
 import org.wikipedia.feed.aggregated.AggregatedFeedContent
@@ -42,9 +42,8 @@ class WidgetProviderFeaturedPage : AppWidgetProvider() {
             override fun onFeaturedArticleReceived(pageTitle: PageTitle, widgetText: CharSequence) {
                 for (widgetId in allWidgetIds) {
                     L.d("updating widget...")
-                    val remoteViews = RemoteViews(context.packageName,
-                            R.layout.widget_featured_page)
-                    if (!TextUtils.isEmpty(widgetText)) {
+                    val remoteViews = RemoteViews(context.packageName, R.layout.widget_featured_page)
+                    if (widgetText.isNotEmpty()) {
                         remoteViews.setTextViewText(R.id.widget_content_text, widgetText)
                     }
                     appWidgetManager.updateAppWidget(widgetId, remoteViews)
@@ -88,10 +87,10 @@ class WidgetProviderFeaturedPage : AppWidgetProvider() {
                     }
                 }
                 .subscribe({ response ->
-                    val widgetText: CharSequence = StringUtil.fromHtml(response.displayTitle)
+                    val widgetText = StringUtil.fromHtml(response.displayTitle)
                     val pageTitle = response.getPageTitle(app.wikiSite)
                     cb.onFeaturedArticleReceived(pageTitle, widgetText)
-                }) { throwable: Throwable ->
+                }) { throwable ->
                     cb.onFeaturedArticleReceived(mainPageTitle, mainPageTitle.displayText)
                     L.e(throwable)
                 }
@@ -110,8 +109,7 @@ class WidgetProviderFeaturedPage : AppWidgetProvider() {
                     text.getSpanEnd(span) - text.getSpanStart(span) <= 1) {
                 continue
             }
-            val title = WikipediaApp.getInstance().wikiSite
-                    .titleForInternalLink(UriUtil.decodeURL(span.url))
+            val title = PageTitle.titleForInternalLink(UriUtil.decodeURL(span.url), WikiSite(span.url))
             if (!title.isFilePage && !title.isSpecial) {
                 titleText = title.displayText
                 break
