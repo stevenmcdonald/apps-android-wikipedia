@@ -6,8 +6,9 @@ This repository is a fork of the official [Wikipedia Android app](https://play.g
    Cronet.aar has the same API as Google's cronet (except for one extra method `setEnvoyUrl`).
    Download this aar file [cronet-0.0.87.0.4280.66.aar](https://repo1.maven.org/maven2/info/guardianproject/envoy/cronet/0.0.87.0.4280.66/cronet-0.0.87.0.4280.66.aar).
 
-2. To build envoy-$BUILD.aar, follow the instructions [here](https://github.com/greatfire/envoy/tree/master/android) 
+2. To build envoy-$BUILD.aar, follow the instructions [here](https://github.com/mnbogner/envoy/tree/envoy-feedback)
    Envoy is a bootstrapping library that has adapters for serval popular libraries (OkHttp/Retrofit, Volley, etc).
+   (This version of the wikipedia app relies on broadcasts from the branch of Envoy specified above).
    Copy and rename the cronet-0.0.87.0.4280.66.aar file from step one to `android/cronet/cronet-$BUILD.aar`.
    $BUILD will be debug or release depending on your build variant.
 
