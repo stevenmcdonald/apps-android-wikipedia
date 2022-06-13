@@ -14,6 +14,9 @@ This repository is a fork of the official [Wikipedia Android app](https://play.g
 
 3. Copy cronet-$BUILD.aar and envoy-$BUILD.aar to `/app/libs` then update `MainActivity` with a list of possible proxy urls and build the application.
 
+4. Build the `greatfire` flavor, e.g. `./gradlew assembleGreatfireDebug`
+
+
 ### Documentation
 
 Documentation for the Wikipedia app is kept on [the wiki](https://www.mediawiki.org/wiki/Wikimedia_Apps/Team/Android/App_hacking).

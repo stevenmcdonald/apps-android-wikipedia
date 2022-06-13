@@ -145,6 +145,11 @@ android {
             versionName computeVersionName('fdroid')
             signingConfig signingConfigs.prod
         }
+        greatfire {
+            applicationId 'org.greatfire.wikiunblocked'
+            versionName computeVersionName('greatfire')
+            signingConfig signingConfigs.prod
+        }
         custom {
             versionName computeVersionName(customChannel)
             // next line is for injecting a custom channel value into the custom/AndroidManifest.xml
