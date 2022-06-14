@@ -32,6 +32,7 @@ import kotlinx.coroutines.launch
 import org.json.JSONObject
 import org.wikipedia.BuildConfig
 import java.io.BufferedReader
+import java.io.FileNotFoundException
 import java.net.HttpURLConnection
 import java.net.URL
 
@@ -134,24 +135,28 @@ class MainActivity : SingleFragmentActivity<MainFragment>(), MainFragment.Callba
             val connection = url.openConnection() as HttpURLConnection
             connection.connect()
 
-            val input = connection.inputStream
-            if (input != null) {
-                Log.d(TAG, "parse json and extract possible urls")
-                val json = input.bufferedReader().use(BufferedReader::readText)
-                val envoyObject = JSONObject(json)
-                val envoyUrlArray = envoyObject.getJSONArray("envoyUrls")
-                for (i in 0 until envoyUrlArray!!.length()) {
-                    if (envoyUrlArray.getString(i).startsWith("ss://")) {
-                        Log.d(TAG, "found ss url")
-                        possibleUrls.add(ssUrlLocal)
-                        ssUrlRemote = envoyUrlArray.getString(i)
-                    } else {
-                        Log.d(TAG, "found url")
-                        possibleUrls.add(envoyUrlArray.getString(i))
+            try {
+                val input = connection.inputStream
+                if (input != null) {
+                    Log.d(TAG, "parse json and extract possible urls")
+                    val json = input.bufferedReader().use(BufferedReader::readText)
+                    val envoyObject = JSONObject(json)
+                    val envoyUrlArray = envoyObject.getJSONArray("envoyUrls")
+                    for (i in 0 until envoyUrlArray!!.length()) {
+                        if (envoyUrlArray.getString(i).startsWith("ss://")) {
+                            Log.d(TAG, "found ss url")
+                            possibleUrls.add(ssUrlLocal)
+                            ssUrlRemote = envoyUrlArray.getString(i)
+                        } else {
+                            Log.d(TAG, "found url")
+                            possibleUrls.add(envoyUrlArray.getString(i))
+                        }
                     }
+                } else {
+                    Log.d(TAG, "response contained no json to parse")
                 }
-            } else {
-                Log.d(TAG, "response contained no json to parse")
+            } catch (e: FileNotFoundException) {
+                Log.d(TAG, "config file error: " + e.localizedMessage)
             }
         } catch (e: Error) {
             Log.d(TAG, "dnstt error: " + e.localizedMessage)
@@ -225,17 +230,14 @@ class MainActivity : SingleFragmentActivity<MainFragment>(), MainFragment.Callba
     }
 
     override fun onTabChanged(tab: NavTab) {
+        binding.mainToolbar.setTitle(tab.text())
         if (tab == NavTab.EXPLORE) {
-            binding.mainToolbarWordmark.visibility = View.VISIBLE
-            binding.mainToolbar.title = ""
             controlNavTabInFragment = false
         } else {
             if (tab == NavTab.SEARCH && Prefs.showSearchTabTooltip) {
                 FeedbackUtil.showTooltip(this, fragment.binding.mainNavTabLayout.findViewById(NavTab.SEARCH.id()), getString(R.string.search_tab_tooltip), aboveOrBelow = true, autoDismiss = false)
                 Prefs.showSearchTabTooltip = false
             }
-            binding.mainToolbarWordmark.visibility = View.GONE
-            binding.mainToolbar.setTitle(tab.text())
             controlNavTabInFragment = true
         }
         fragment.requestUpdateToolbarElevation()
