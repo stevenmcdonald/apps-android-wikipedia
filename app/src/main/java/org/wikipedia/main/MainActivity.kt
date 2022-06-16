@@ -33,6 +33,8 @@ import org.json.JSONObject
 import org.wikipedia.BuildConfig
 import java.io.BufferedReader
 import java.io.FileNotFoundException
+import java.lang.Exception
+import java.net.ConnectException
 import java.net.HttpURLConnection
 import java.net.URL
 
@@ -115,58 +117,83 @@ class MainActivity : SingleFragmentActivity<MainFragment>(), MainFragment.Callba
 
         if (BuildConfig.DNSTT_SERVER.isNullOrEmpty()
             || BuildConfig.DNSTT_KEY.isNullOrEmpty()
-            || BuildConfig.DNSTT_PATH.isNullOrEmpty()) {
-            Log.e(TAG, "dnstt server/key/path are not defined, cannot setup envoy")
-            return
-        }
-
-        try {
-            Log.d(TAG, "start dnstt proxy")
-            // provide either DOH or DOT address, and provide an empty string for the other
-            val dnsttPort = IPtProxy.startDNSttProxy(
-                BuildConfig.DNSTT_SERVER,
-                "https://dns.google/dns-query",
-                "",
-                BuildConfig.DNSTT_KEY
-            )
-
-            Log.d(TAG, "get list of possible urls")
-            val url = URL("http://127.0.0.1:" + dnsttPort + BuildConfig.DNSTT_PATH)
-            val connection = url.openConnection() as HttpURLConnection
-            connection.connect()
-
+            || BuildConfig.DNSTT_PATH.isNullOrEmpty()
+            || (BuildConfig.DOH_URL.isNullOrEmpty() && BuildConfig.DOT_ADDR.isNullOrEmpty())) {
+            Log.e(TAG, "dnstt parameters are not defined, cannot fetch metadata with dnstt")
+        } else {
             try {
-                val input = connection.inputStream
-                if (input != null) {
-                    Log.d(TAG, "parse json and extract possible urls")
-                    val json = input.bufferedReader().use(BufferedReader::readText)
-                    val envoyObject = JSONObject(json)
-                    val envoyUrlArray = envoyObject.getJSONArray("envoyUrls")
-                    for (i in 0 until envoyUrlArray!!.length()) {
-                        if (envoyUrlArray.getString(i).startsWith("ss://")) {
-                            Log.d(TAG, "found ss url")
-                            possibleUrls.add(ssUrlLocal)
-                            ssUrlRemote = envoyUrlArray.getString(i)
-                        } else {
-                            Log.d(TAG, "found url")
-                            possibleUrls.add(envoyUrlArray.getString(i))
-                        }
-                    }
-                } else {
-                    Log.d(TAG, "response contained no json to parse")
+                // provide either DOH or DOT address, and provide an empty string for the other
+                Log.d(TAG, "start dnstt proxy")
+                val dnsttPort = IPtProxy.startDNSttProxy(
+                    BuildConfig.DNSTT_SERVER,
+                    BuildConfig.DOH_URL,
+                    BuildConfig.DOT_ADDR,
+                    BuildConfig.DNSTT_KEY
+                )
+
+                Log.d(TAG, "get list of possible urls")
+                val url = URL("http://127.0.0.1:" + dnsttPort + BuildConfig.DNSTT_PATH)
+                Log.d(TAG, "open connection")
+                val connection = url.openConnection() as HttpURLConnection
+                try {
+                    Log.d(TAG, "connect")
+                    connection.connect()
+                } catch (e: ConnectException) {
+                    Log.e(TAG, "connection error: " + e.localizedMessage)
+                } catch (e: Exception) {
+                    Log.e(TAG, "unexpected error when connecting: " + e.localizedMessage)
                 }
-            } catch (e: FileNotFoundException) {
-                Log.d(TAG, "config file error: " + e.localizedMessage)
+
+                try {
+                    Log.d(TAG, "open input stream")
+                    val input = connection.inputStream
+                    if (input != null) {
+                        Log.d(TAG, "parse json and extract possible urls")
+                        val json = input.bufferedReader().use(BufferedReader::readText)
+                        val envoyObject = JSONObject(json)
+                        val envoyUrlArray = envoyObject.getJSONArray("envoyUrls")
+                        for (i in 0 until envoyUrlArray!!.length()) {
+                            if (envoyUrlArray.getString(i).startsWith("ss://")) {
+                                Log.d(TAG, "found ss url")
+                                possibleUrls.add(ssUrlLocal)
+                                ssUrlRemote = envoyUrlArray.getString(i)
+                            } else {
+                                Log.d(TAG, "found url")
+                                possibleUrls.add(envoyUrlArray.getString(i))
+                            }
+                        }
+                    } else {
+                        Log.e(TAG, "response contained no json to parse")
+                    }
+                } catch (e: FileNotFoundException) {
+                    Log.e(TAG, "config file error: " + e.localizedMessage)
+                } catch (e: Exception) {
+                    Log.e(TAG, "unexpected error when reading file: " + e.localizedMessage)
+                }
+            } catch (e: Error) {
+                Log.e(TAG, "dnstt error: " + e.localizedMessage)
+            } catch (e: Exception) {
+                Log.e(TAG, "unexpected error when starting dnstt: " + e.localizedMessage)
             }
-        } catch (e: Error) {
-            Log.d(TAG, "dnstt error: " + e.localizedMessage)
+
+            Log.d(TAG, "stop dnstt proxy")
+            IPtProxy.stopDNSttProxy()
         }
 
-        Log.d(TAG, "stop dnstt proxy")
-        IPtProxy.stopDNSttProxy()
+        if (BuildConfig.DEF_PROXY.isNullOrEmpty()) {
+            Log.w(TAG, "no default proxy url was provided")
+        } else {
+            if (possibleUrls.contains(BuildConfig.DEF_PROXY)) {
+                Log.d(TAG, "default proxy url already found in list")
+            } else {
+                Log.d(TAG, "add default proxy url to list")
+                possibleUrls.add(BuildConfig.DEF_PROXY)
+            }
+        }
 
         // check for urls that require services
         for (url in possibleUrls) {
+            // Notification.Builder in ShadowsocksService.onStartCommand may require api > 7
             if (url.startsWith("socks5://")) {
                 Log.d(TAG, "shadowsocks service needed, submit urls after starting")
                 // start shadowsocks service
@@ -182,10 +209,14 @@ class MainActivity : SingleFragmentActivity<MainFragment>(), MainFragment.Callba
             }
         }
 
-        // submit list of urls to envoy for evaluation
-        Log.d(TAG, "no services needed, submit urls immediately")
-        waitingForUrl = true
-        NetworkIntentService.submit(this, possibleUrls)
+        if (possibleUrls.isEmpty()) {
+            Log.w(TAG, "no urls to submit, cannot setup envoy")
+        } else {
+            // submit list of urls to envoy for evaluation
+            Log.d(TAG, "no services needed, submit urls immediately")
+            waitingForUrl = true
+            NetworkIntentService.submit(this, possibleUrls)
+        }
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {

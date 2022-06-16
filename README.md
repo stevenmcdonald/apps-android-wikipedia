@@ -17,9 +17,11 @@ This repository is a fork of the official [Wikipedia Android app](https://play.g
 4. Copy cronet-$BUILD.aar, envoy-$BUILD.aar, and IPtProxy.aar to `/app/libs`.
 
 5. Several project properties must be specified to identify an endpoint from which to download metadata.  These properties may be specified either on the command line or in Android Studio:
-   - DNSTT server
-   - DNSTT key
-   - DNSTT path
+   - DNSTT server (-Pdnsttserver)
+   - DNSTT key (-Pdnsttkey)
+   - DNSTT path (-Pdnsttpath)
+   - DOH url OR DOT address (-PdohUrl OR -PdotAddr)
+   - Default proxy url to use if no metadata is downloaded (-PdefProxy)
 
 ![properties](https://user-images.githubusercontent.com/6945405/173699019-d023331e-9217-49b6-a88b-ca8afa40ce2a.png)
 
