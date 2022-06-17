@@ -66,27 +66,23 @@ class MainActivity : SingleFragmentActivity<MainFragment>(), MainFragment.Callba
             if (intent != null && context != null) {
                 if (intent.action == BROADCAST_URL_VALIDATION_SUCCEEDED) {
                     val validUrls = intent.getStringArrayListExtra(EXTENDED_DATA_VALID_URLS)
-                    Log.d(TAG, "received valid urls: " + validUrls?.let {
-                        TextUtils.join(", ", it)
-                    })
+                    Log.d(TAG, "received " + validUrls?.size + " valid urls")
                     if (waitingForUrl) {
                         if (validUrls != null && !validUrls.isEmpty()) {
                             waitingForUrl = false
                             val envoyUrl = validUrls[0]
-                            Log.d(TAG, "received valid url, start engine with " + envoyUrl)
+                            Log.d(TAG, "found a valid url, start engine")
                             // select the fastest one (urls are ordered by latency), reInitializeIfNeeded set to false
                             CronetNetworking.initializeCronetEngine(context, envoyUrl)
                         } else {
                             Log.e(TAG, "received empty list of valid urls")
                         }
                     } else {
-                        Log.d(TAG, "already received valid url")
+                        Log.d(TAG, "already found a valid url")
                     }
                 } else if (intent.action == BROADCAST_URL_VALIDATION_FAILED) {
                     val invalidUrls = intent.getStringArrayListExtra(EXTENDED_DATA_INVALID_URLS)
-                    Log.e(TAG, "received invalid urls: " + invalidUrls?.let {
-                        TextUtils.join(", ", it)
-                    })
+                    Log.e(TAG, "received " + invalidUrls?.size + " invalid urls")
                     // TODO: log or show error if all possible urls were invalid?
                 } else if (intent.action == ShadowsocksService.SHADOWSOCKS_SERVICE_BROADCAST) {
                     waitingForShadowsocks = false
