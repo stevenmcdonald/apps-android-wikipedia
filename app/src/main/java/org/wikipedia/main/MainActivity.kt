@@ -19,7 +19,6 @@ import org.wikipedia.util.FeedbackUtil
 import org.wikipedia.util.ResourceUtil
 import android.content.BroadcastReceiver
 import android.content.IntentFilter
-import android.text.TextUtils
 import android.util.Log
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import androidx.core.content.ContextCompat
@@ -28,7 +27,9 @@ import org.greatfire.envoy.*
 import IPtProxy.IPtProxy
 import androidx.lifecycle.lifecycleScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import org.json.JSONArray
 import org.json.JSONObject
 import org.wikipedia.BuildConfig
 import java.io.BufferedReader
@@ -36,6 +37,7 @@ import java.io.FileNotFoundException
 import java.lang.Exception
 import java.net.ConnectException
 import java.net.HttpURLConnection
+import java.net.SocketTimeoutException
 import java.net.URL
 
 class MainActivity : SingleFragmentActivity<MainFragment>(), MainFragment.Callback {
@@ -55,8 +57,9 @@ class MainActivity : SingleFragmentActivity<MainFragment>(), MainFragment.Callba
     private val possibleUrls = mutableListOf<String>()
 
     // TODO: revisit and refactor
+    private var waitingForDnstt = false
     private var waitingForShadowsocks = false
-    private var waitingForUrl = true
+    private var waitingForUrl = false
 
     // this receiver should be triggered by a success or failure broadcast from either the
     // NetworkIntentService (indicating whether submitted urls were valid or invalid) or the
@@ -111,15 +114,48 @@ class MainActivity : SingleFragmentActivity<MainFragment>(), MainFragment.Callba
 
     private fun envoySetup() {
 
+        // immediately submit default url in case dnstt fails
+        if (BuildConfig.DEF_PROXY.isNullOrEmpty()) {
+            Log.w(TAG, "no default proxy url was provided")
+        } else {
+            Log.d(TAG, "submit default proxy url to envoy")
+            waitingForUrl = true
+            NetworkIntentService.submit(this, mutableListOf<String>(BuildConfig.DEF_PROXY))
+        }
+
+        // start asynchronous dnstt task to fetch proxy urls
+        lifecycleScope.launch(Dispatchers.IO) {
+            getDnsttMetadata()
+        }
+    }
+
+    fun getDnsttMetadata() {
+
+        // check for dnstt project properties
         if (BuildConfig.DNSTT_SERVER.isNullOrEmpty()
             || BuildConfig.DNSTT_KEY.isNullOrEmpty()
             || BuildConfig.DNSTT_PATH.isNullOrEmpty()
             || (BuildConfig.DOH_URL.isNullOrEmpty() && BuildConfig.DOT_ADDR.isNullOrEmpty())) {
             Log.e(TAG, "dnstt parameters are not defined, cannot fetch metadata with dnstt")
         } else {
+
+            // set time limit for dnstt (dnstt allows a long timeout and retries, may never return)
+            lifecycleScope.launch(Dispatchers.IO) {
+                Log.d(TAG, "start timer")
+                waitingForDnstt = true
+                delay(10000L)  // wait 10 seconds
+                if (waitingForDnstt) {
+                    Log.d(TAG, "stop timer, stop dnstt")
+                    waitingForDnstt = false
+                    IPtProxy.stopDNSttProxy()
+                } else {
+                    Log.d(TAG, "dnstt already complete")
+                }
+            }
+
             try {
                 // provide either DOH or DOT address, and provide an empty string for the other
-                Log.d(TAG, "start dnstt proxy")
+                Log.d(TAG, "start dnstt proxy: " + BuildConfig.DNSTT_SERVER + " / " + BuildConfig.DOH_URL + " / " + BuildConfig.DOT_ADDR + " / " + BuildConfig.DNSTT_KEY)
                 val dnsttPort = IPtProxy.startDNSttProxy(
                     BuildConfig.DNSTT_SERVER,
                     BuildConfig.DOH_URL,
@@ -129,11 +165,15 @@ class MainActivity : SingleFragmentActivity<MainFragment>(), MainFragment.Callba
 
                 Log.d(TAG, "get list of possible urls")
                 val url = URL("http://127.0.0.1:" + dnsttPort + BuildConfig.DNSTT_PATH)
-                Log.d(TAG, "open connection")
+                Log.d(TAG, "open connection: " + url)
                 val connection = url.openConnection() as HttpURLConnection
                 try {
+                    Log.d(TAG, "set timeout")
+                    connection.connectTimeout = 5000
                     Log.d(TAG, "connect")
                     connection.connect()
+                } catch (e: SocketTimeoutException) {
+                    Log.e(TAG, "connection timeout when connecting: " + e.localizedMessage)
                 } catch (e: ConnectException) {
                     Log.e(TAG, "connection error: " + e.localizedMessage)
                 } catch (e: Exception) {
@@ -148,19 +188,12 @@ class MainActivity : SingleFragmentActivity<MainFragment>(), MainFragment.Callba
                         val json = input.bufferedReader().use(BufferedReader::readText)
                         val envoyObject = JSONObject(json)
                         val envoyUrlArray = envoyObject.getJSONArray("envoyUrls")
-                        for (i in 0 until envoyUrlArray!!.length()) {
-                            if (envoyUrlArray.getString(i).startsWith("ss://")) {
-                                Log.d(TAG, "found ss url")
-                                possibleUrls.add(ssUrlLocal)
-                                ssUrlRemote = envoyUrlArray.getString(i)
-                            } else {
-                                Log.d(TAG, "found url")
-                                possibleUrls.add(envoyUrlArray.getString(i))
-                            }
-                        }
+                        handleDnsttResults(envoyUrlArray)
                     } else {
                         Log.e(TAG, "response contained no json to parse")
                     }
+                } catch (e: SocketTimeoutException) {
+                    Log.e(TAG, "connection timeout when getting input: " + e.localizedMessage)
                 } catch (e: FileNotFoundException) {
                     Log.e(TAG, "config file error: " + e.localizedMessage)
                 } catch (e: Exception) {
@@ -173,17 +206,22 @@ class MainActivity : SingleFragmentActivity<MainFragment>(), MainFragment.Callba
             }
 
             Log.d(TAG, "stop dnstt proxy")
+            waitingForDnstt = false
             IPtProxy.stopDNSttProxy()
         }
+    }
 
-        if (BuildConfig.DEF_PROXY.isNullOrEmpty()) {
-            Log.w(TAG, "no default proxy url was provided")
-        } else {
-            if (possibleUrls.contains(BuildConfig.DEF_PROXY)) {
-                Log.d(TAG, "default proxy url already found in list")
+    fun handleDnsttResults(envoyUrlArray: JSONArray?) {
+
+        // parse dnstt urls
+        for (i in 0 until envoyUrlArray!!.length()) {
+            if (envoyUrlArray.getString(i).startsWith("ss://")) {
+                Log.d(TAG, "found ss url")
+                possibleUrls.add(ssUrlLocal)
+                ssUrlRemote = envoyUrlArray.getString(i)
             } else {
-                Log.d(TAG, "add default proxy url to list")
-                possibleUrls.add(BuildConfig.DEF_PROXY)
+                Log.d(TAG, "found url")
+                possibleUrls.add(envoyUrlArray.getString(i))
             }
         }
 
@@ -226,9 +264,7 @@ class MainActivity : SingleFragmentActivity<MainFragment>(), MainFragment.Callba
         })
 
         // run envoy setup (fetches and validate urls)
-        lifecycleScope.launch(Dispatchers.IO) {
-            envoySetup()
-        }
+        envoySetup()
 
         setImageZoomHelper()
         if (Prefs.isInitialOnboardingEnabled && savedInstanceState == null) {
