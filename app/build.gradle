@@ -329,12 +329,14 @@ dependencies {
     androidTestImplementation "android.arch.persistence.room:testing:1.1.1"
     androidTestUtil 'androidx.test:orchestrator:1.4.1'
 
+    // use local files for debug builds to support development
     debugImplementation files('libs/cronet-debug.aar')
     debugImplementation files('libs/envoy-debug.aar')
-    releaseImplementation files('libs/cronet-release.aar')
-    releaseImplementation files('libs/envoy-release.aar')
-
-    implementation files('libs/IPtProxy.aar')
+    debugImplementation files('libs/IPtProxy.aar')
+    // use maven dependencies for release builds to support automation
+    releaseImplementation 'org.greatfire.envoy:cronet:102.0.5005.41'
+    releaseImplementation 'org.greatfire:envoy:102.0.5005.41'
+    releaseImplementation 'org.greatfire:IEnvoyProxy:1.0.2'
 }
 
 private setSigningConfigKey(config, Properties props) {

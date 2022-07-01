@@ -3,7 +3,6 @@ package org.wikipedia.main
 import android.content.Context
 import android.content.Intent
 import android.os.Bundle
-import android.view.View
 import androidx.appcompat.view.ActionMode
 import androidx.appcompat.widget.Toolbar
 import androidx.fragment.app.Fragment
@@ -24,7 +23,7 @@ import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import androidx.core.content.ContextCompat
 import org.greatfire.envoy.*
 
-import IPtProxy.IPtProxy
+import IEnvoyProxy.IEnvoyProxy
 import androidx.lifecycle.lifecycleScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
@@ -147,7 +146,7 @@ class MainActivity : SingleFragmentActivity<MainFragment>(), MainFragment.Callba
                 if (waitingForDnstt) {
                     Log.d(TAG, "stop timer, stop dnstt")
                     waitingForDnstt = false
-                    IPtProxy.stopDNSttProxy()
+                    IEnvoyProxy.stopDnstt()
                 } else {
                     Log.d(TAG, "dnstt already complete")
                 }
@@ -156,7 +155,7 @@ class MainActivity : SingleFragmentActivity<MainFragment>(), MainFragment.Callba
             try {
                 // provide either DOH or DOT address, and provide an empty string for the other
                 Log.d(TAG, "start dnstt proxy: " + BuildConfig.DNSTT_SERVER + " / " + BuildConfig.DOH_URL + " / " + BuildConfig.DOT_ADDR + " / " + BuildConfig.DNSTT_KEY)
-                val dnsttPort = IPtProxy.startDNSttProxy(
+                val dnsttPort = IEnvoyProxy.startDnstt(
                     BuildConfig.DNSTT_SERVER,
                     BuildConfig.DOH_URL,
                     BuildConfig.DOT_ADDR,
@@ -207,7 +206,7 @@ class MainActivity : SingleFragmentActivity<MainFragment>(), MainFragment.Callba
 
             Log.d(TAG, "stop dnstt proxy")
             waitingForDnstt = false
-            IPtProxy.stopDNSttProxy()
+            IEnvoyProxy.stopDnstt()
         }
     }
 
