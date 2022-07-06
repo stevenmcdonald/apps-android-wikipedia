@@ -97,7 +97,7 @@ android {
         }
 
         dimension 'default'
-        signingConfig signingConfigs.debug
+        //signingConfig signingConfigs.debug
 
         buildConfigField "String", "DEFAULT_RESTBASE_URI_FORMAT", '"%1$s://%2$s/api/rest_v1/"'
         buildConfigField "String", "META_WIKI_BASE_URI", '"https://meta.wikimedia.org"'
@@ -141,6 +141,7 @@ android {
         }
     }
 
+    /*
     signingConfigs {
         prod {
             setSigningConfigKey(prod, PROD_PROPS)
@@ -149,6 +150,7 @@ android {
             setSigningConfigKey(debug, REPO_PROPS)
         }
     }
+    */
 
     buildTypes {
         debug {
@@ -180,7 +182,7 @@ android {
         }
         prod {
             versionName computeVersionName('r')
-            signingConfig signingConfigs.prod
+            //signingConfig signingConfigs.prod
         }
         alpha {
             versionName computeVersionName('alpha')
@@ -189,22 +191,22 @@ android {
         beta {
             versionName computeVersionName('beta')
             applicationIdSuffix '.beta'
-            signingConfig signingConfigs.prod
+            //signingConfig signingConfigs.prod
         }
         fdroid {
             versionName computeVersionName('fdroid')
-            signingConfig signingConfigs.prod
+            //signingConfig signingConfigs.prod
         }
         greatfire {
             applicationId 'org.greatfire.wikiunblocked'
             versionName computeVersionName('greatfire')
-            signingConfig signingConfigs.prod
+            //signingConfig signingConfigs.prod
         }
         custom {
             versionName computeVersionName(customChannel)
             // next line is for injecting a custom channel value into the custom/AndroidManifest.xml
             manifestPlaceholders = [customChannel:getProperty('customChannel').toString()]
-            signingConfig signingConfigs.prod
+            //signingConfig signingConfigs.prod
         }
     }
 
@@ -339,6 +341,7 @@ dependencies {
     releaseImplementation 'org.greatfire:IEnvoyProxy:1.0.2'
 }
 
+/*
 private setSigningConfigKey(config, Properties props) {
     if(props != null) {
         config.storeFile = props['keystore'] == null ? null : file(props['keystore'])
@@ -348,6 +351,7 @@ private setSigningConfigKey(config, Properties props) {
     }
     return config
 }
+*/
 
 private static Properties loadProperties(File file) {
     Properties props = null
