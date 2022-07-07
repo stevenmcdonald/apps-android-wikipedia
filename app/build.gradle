@@ -193,10 +193,10 @@ android {
             applicationIdSuffix '.beta'
             //signingConfig signingConfigs.prod
         }
-        fdroid {
-            versionName computeVersionName('fdroid')
-            //signingConfig signingConfigs.prod
-        }
+        //fdroid {
+        //    versionName computeVersionName('fdroid')
+        //    //signingConfig signingConfigs.prod
+        //}
         greatfire {
             applicationId 'org.greatfire.wikiunblocked'
             versionName computeVersionName('greatfire')
