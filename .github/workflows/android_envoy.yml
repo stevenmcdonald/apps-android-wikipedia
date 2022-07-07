@@ -45,7 +45,7 @@ jobs:
     - name: Create hash
       run: git rev-parse HEAD > app/build/outputs/apk/greatfire/release/rev-hash.txt
     - name: Rename APK to universal
-      run: mv app/build/outputs/apk/greatfire/release/app-greatfire-release-signed.apk app/build/outputs/apk/greatfire/release/app-greatfire-universal-release.apk
+      run: mv app/build/outputs/apk/greatfire/release/app-greatfire-release-unsigned-signed.apk app/build/outputs/apk/greatfire/release/app-greatfire-universal-release.apk
     - uses: dev-drprasad/delete-tag-and-release@v0.1.2
       name: Delete latest release tag
       with:
