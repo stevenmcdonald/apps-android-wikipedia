@@ -57,7 +57,7 @@ jobs:
       name: Create release and upload artifacts
       with:
         name: envoy-demo
-        commit: main
+        commit: ${{ github.sha }}
         tag: envoy-latest
         artifacts: "app/build/outputs/apk/greatfire/release/app-greatfire-universal-release.apk,app/build/outputs/apk/greatfire/release/rev-hash.txt"
         body: This is an android release automatically built from the latest commit to the envoy-demo branch.
