@@ -7,11 +7,10 @@ import android.os.Bundle
 import android.view.*
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import androidx.appcompat.content.res.AppCompatResources
 import androidx.appcompat.view.ActionMode
-import androidx.core.content.ContextCompat
-import androidx.core.graphics.BlendModeColorFilterCompat
-import androidx.core.graphics.BlendModeCompat
 import androidx.core.os.bundleOf
+import androidx.core.view.MenuItemCompat
 import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.ItemTouchHelper
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -42,9 +41,9 @@ import org.wikipedia.page.PageAvailableOfflineHandler
 import org.wikipedia.page.PageAvailableOfflineHandler.check
 import org.wikipedia.readinglist.database.ReadingList
 import org.wikipedia.readinglist.database.ReadingListPage
-import org.wikipedia.readinglist.sync.ReadingListSyncAdapter
 import org.wikipedia.readinglist.sync.ReadingListSyncEvent
 import org.wikipedia.settings.Prefs
+import org.wikipedia.settings.RemoteConfig
 import org.wikipedia.settings.SiteInfoClient.maxPagesPerReadingList
 import org.wikipedia.util.*
 import org.wikipedia.views.*
@@ -89,7 +88,7 @@ class ReadingListFragment : Fragment(), ReadingListItemActionsDialog.Callback {
         setHeaderView()
         setRecyclerView()
         setSwipeRefreshView()
-        disposables.add(WikipediaApp.getInstance().bus.subscribe(EventBusConsumer()))
+        disposables.add(WikipediaApp.instance.bus.subscribe(EventBusConsumer()))
         return binding.root
     }
 
@@ -127,9 +126,10 @@ class ReadingListFragment : Fragment(), ReadingListItemActionsDialog.Callback {
         sortByRecentItem.setTitle(if (sortMode == ReadingList.SORT_BY_RECENT_DESC) R.string.reading_list_sort_by_recent_desc else R.string.reading_list_sort_by_recent)
         val searchItem = menu.findItem(R.id.menu_search_lists)
         val sortOptionsItem = menu.findItem(R.id.menu_sort_options)
-        val iconColor = if (toolbarExpanded) ContextCompat.getColor(requireContext(), android.R.color.white) else ResourceUtil.getThemedColor(requireContext(), R.attr.toolbar_icon_color)
-        searchItem.icon.colorFilter = BlendModeColorFilterCompat.createBlendModeColorFilterCompat(iconColor, BlendModeCompat.SRC_IN)
-        sortOptionsItem.icon.colorFilter = BlendModeColorFilterCompat.createBlendModeColorFilterCompat(iconColor, BlendModeCompat.SRC_IN)
+        val iconColor = if (toolbarExpanded) AppCompatResources.getColorStateList(requireContext(), android.R.color.white)
+        else ResourceUtil.getThemedColorStateList(requireContext(), R.attr.toolbar_icon_color)
+        MenuItemCompat.setIconTintList(searchItem, iconColor)
+        MenuItemCompat.setIconTintList(sortOptionsItem, iconColor)
         readingList?.let {
             if (it.isDefault) {
                 menu.findItem(R.id.menu_reading_list_rename)?.let { item ->
@@ -213,7 +213,7 @@ class ReadingListFragment : Fragment(), ReadingListItemActionsDialog.Callback {
     private fun setSwipeRefreshView() {
         binding.readingListSwipeRefresh.setColorSchemeResources(ResourceUtil.getThemedAttributeId(requireContext(), R.attr.colorAccent))
         binding.readingListSwipeRefresh.setOnRefreshListener { ReadingListsFragment.refreshSync(this, binding.readingListSwipeRefresh) }
-        if (ReadingListSyncAdapter.isDisabledByRemoteConfig) {
+        if (RemoteConfig.config.disableReadingListSync) {
             binding.readingListSwipeRefresh.isEnabled = false
         }
     }
@@ -232,14 +232,14 @@ class ReadingListFragment : Fragment(), ReadingListItemActionsDialog.Callback {
             }
             if (!articleLimitMessageShown && it.pages.size >= maxPagesPerReadingList) {
                 val message = getString(R.string.reading_list_article_limit_message, readingList.title, maxPagesPerReadingList)
-                FeedbackUtil.makeSnackbar(requireActivity(), message, FeedbackUtil.LENGTH_DEFAULT).show()
+                FeedbackUtil.makeSnackbar(requireActivity(), message).show()
                 articleLimitMessageShown = true
             }
         }
     }
 
     private fun updateReadingListData() {
-        disposables.add(Observable.fromCallable { AppDatabase.getAppDatabase().readingListDao().getListById(readingListId, true) }
+        disposables.add(Observable.fromCallable { AppDatabase.instance.readingListDao().getListById(readingListId, true) }
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe({ list ->
@@ -364,7 +364,7 @@ class ReadingListFragment : Fragment(), ReadingListItemActionsDialog.Callback {
         readingList?.let {
             val pages = selectedPages
             if (pages.isNotEmpty()) {
-                AppDatabase.getAppDatabase().readingListPageDao().markPagesForDeletion(it, pages)
+                AppDatabase.instance.readingListPageDao().markPagesForDeletion(it, pages)
                 it.pages.removeAll(pages)
                 funnel.logDeleteItem(it, 0)
                 ReadingListBehaviorsUtil.showDeletePagesUndoSnackbar(requireActivity(), it, pages) { updateReadingListData() }
@@ -520,6 +520,8 @@ class ReadingListFragment : Fragment(), ReadingListItemActionsDialog.Callback {
             }
         }
 
+        override fun isSwipeable(): Boolean { return true }
+
         private val imageDimension
             get() = DimenUtil.roundedDpToPx(if (currentSearchQuery.isNullOrEmpty()) DimenUtil.getDimension(R.dimen.view_list_card_item_image) else ReadingListsFragment.ARTICLE_ITEM_IMAGE_DIMENSION.toFloat())
     }
@@ -646,8 +648,8 @@ class ReadingListFragment : Fragment(), ReadingListItemActionsDialog.Callback {
                 val entry = HistoryEntry(title, HistoryEntry.SOURCE_READING_LIST)
                 item.touch()
                 Completable.fromAction {
-                    AppDatabase.getAppDatabase().readingListDao().updateLists(ReadingListBehaviorsUtil.getListsContainPage(item), false)
-                    AppDatabase.getAppDatabase().readingListPageDao().updateReadingListPage(item)
+                    AppDatabase.instance.readingListDao().updateLists(ReadingListBehaviorsUtil.getListsContainPage(item), false)
+                    AppDatabase.instance.readingListPageDao().updateReadingListPage(item)
                 }.subscribeOn(Schedulers.io()).subscribe()
                 startActivity(PageActivity.newIntentForCurrentTab(requireContext(), entry, entry.title))
             }

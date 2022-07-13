@@ -8,6 +8,7 @@ import android.speech.RecognizerIntent
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.os.bundleOf
 import androidx.fragment.app.Fragment
 import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers
@@ -20,12 +21,12 @@ import org.wikipedia.R
 import org.wikipedia.WikipediaApp
 import org.wikipedia.activity.FragmentUtil
 import org.wikipedia.analytics.DescriptionEditFunnel
+import org.wikipedia.analytics.LoginFunnel
 import org.wikipedia.analytics.SuggestedEditsFunnel
 import org.wikipedia.analytics.eventplatform.EditAttemptStepEvent
 import org.wikipedia.auth.AccountUtil
 import org.wikipedia.csrf.CsrfTokenClient
 import org.wikipedia.databinding.FragmentDescriptionEditBinding
-import org.wikipedia.dataclient.Service
 import org.wikipedia.dataclient.ServiceFactory
 import org.wikipedia.dataclient.WikiSite
 import org.wikipedia.dataclient.mwapi.MwException
@@ -33,6 +34,7 @@ import org.wikipedia.dataclient.mwapi.MwServiceError
 import org.wikipedia.dataclient.okhttp.OkHttpConnectionFactory
 import org.wikipedia.dataclient.wikidata.EntityPostResponse
 import org.wikipedia.language.AppLanguageLookUpTable
+import org.wikipedia.login.LoginActivity
 import org.wikipedia.notifications.AnonymousNotificationHelper
 import org.wikipedia.page.PageTitle
 import org.wikipedia.settings.Prefs
@@ -63,6 +65,16 @@ class DescriptionEditFragment : Fragment() {
     private var highlightText: String? = null
 
     private val disposables = CompositeDisposable()
+
+    private val loginLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
+        if (it.resultCode == LoginActivity.RESULT_LOGIN_SUCCESS) {
+            binding.fragmentDescriptionEditView.loadReviewContent(binding.fragmentDescriptionEditView.showingReviewContent())
+            funnel.logLoginSuccess()
+            FeedbackUtil.showMessage(this, R.string.login_success_toast)
+        } else {
+            funnel.logLoginFailure()
+        }
+    }
 
     private val successRunnable = Runnable {
         if (!isAdded) {
@@ -106,15 +118,22 @@ class DescriptionEditFragment : Fragment() {
             targetSummary = it
         }
         val type = if (pageTitle.description == null) DescriptionEditFunnel.Type.NEW else DescriptionEditFunnel.Type.EXISTING
-        funnel = DescriptionEditFunnel(WikipediaApp.getInstance(), pageTitle, type, invokeSource)
+        funnel = DescriptionEditFunnel(WikipediaApp.instance, pageTitle, type, invokeSource)
         funnel.logStart()
-        EditAttemptStepEvent.logInit(pageTitle.wikiSite.languageCode)
+        EditAttemptStepEvent.logInit(pageTitle, EditAttemptStepEvent.INTERFACE_OTHER)
     }
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
         super.onCreateView(inflater, container, savedInstanceState)
         _binding = FragmentDescriptionEditBinding.inflate(inflater, container, false)
         loadPageSummaryIfNeeded(savedInstanceState)
+
+        binding.fragmentDescriptionEditView.setLoginCallback {
+            val loginIntent = LoginActivity.newIntent(requireActivity(),
+                    LoginFunnel.SOURCE_EDIT, funnel.sessionToken)
+            loginLauncher.launch(loginIntent)
+        }
+
         funnel.logReady()
         return binding.root
     }
@@ -189,9 +208,6 @@ class DescriptionEditFragment : Fragment() {
     }
 
     private inner class EditViewCallback : DescriptionEditView.Callback {
-        private val wikiData = WikiSite(Service.WIKIDATA_URL, "")
-        private val wikiCommons = WikiSite(Service.COMMONS_URL)
-        private val commonsDbName = "commonswiki"
         override fun onSaveClick() {
             if (!binding.fragmentDescriptionEditView.showingReviewContent()) {
                 binding.fragmentDescriptionEditView.loadReviewContent(true)
@@ -201,19 +217,19 @@ class DescriptionEditFragment : Fragment() {
                 cancelCalls()
                 getEditTokenThenSave()
                 funnel.logSaveAttempt()
-                EditAttemptStepEvent.logSaveAttempt(pageTitle.wikiSite.languageCode)
+                EditAttemptStepEvent.logSaveAttempt(pageTitle, EditAttemptStepEvent.INTERFACE_OTHER)
             }
         }
 
         private fun getEditTokenThenSave() {
-            val csrfClient = if (action == DescriptionEditActivity.Action.ADD_CAPTION ||
+            val csrfSite = if (action == DescriptionEditActivity.Action.ADD_CAPTION ||
                     action == DescriptionEditActivity.Action.TRANSLATE_CAPTION) {
-                CsrfTokenClient(wikiCommons)
+                Constants.commonsWikiSite
             } else {
-                CsrfTokenClient(if (shouldWriteToLocalWiki()) pageTitle.wikiSite else wikiData, pageTitle.wikiSite)
+                if (shouldWriteToLocalWiki()) pageTitle.wikiSite else Constants.wikidataWikiSite
             }
 
-            disposables.add(csrfClient.token.subscribe({ token ->
+            disposables.add(CsrfTokenClient.getToken(csrfSite).subscribe({ token ->
                 if (shouldWriteToLocalWiki()) {
                     // If the description is being applied to an article on English Wikipedia, it
                     // should be written directly to the article instead of Wikidata.
@@ -253,7 +269,7 @@ class DescriptionEditFragment : Fragment() {
                                     AnonymousNotificationHelper.onEditSubmitted()
                                     waitForUpdatedRevision(newRevId)
                                     funnel.logSaved(newRevId)
-                                    EditAttemptStepEvent.logSaveSuccess(pageTitle.wikiSite.languageCode)
+                                    EditAttemptStepEvent.logSaveSuccess(pageTitle, EditAttemptStepEvent.INTERFACE_OTHER)
                                 }
                                 hasCaptchaResponse -> {
                                     // TODO: handle captcha.
@@ -299,7 +315,7 @@ class DescriptionEditFragment : Fragment() {
                         if (response.success > 0) {
                             requireView().postDelayed(successRunnable, TimeUnit.SECONDS.toMillis(4))
                             funnel.logSaved(response.entity?.run { lastRevId } ?: 0)
-                            EditAttemptStepEvent.logSaveSuccess(pageTitle.wikiSite.languageCode)
+                            EditAttemptStepEvent.logSaveSuccess(pageTitle, EditAttemptStepEvent.INTERFACE_OTHER)
                         } else {
                             editFailed(RuntimeException("Received unrecognized description edit response"), true)
                         }
@@ -341,11 +357,11 @@ class DescriptionEditFragment : Fragment() {
         private fun getPostObservable(editToken: String, languageCode: String): Observable<EntityPostResponse> {
             return if (action == DescriptionEditActivity.Action.ADD_CAPTION ||
                     action == DescriptionEditActivity.Action.TRANSLATE_CAPTION) {
-                ServiceFactory.get(wikiCommons).postLabelEdit(languageCode, languageCode, commonsDbName,
+                ServiceFactory.get(Constants.commonsWikiSite).postLabelEdit(languageCode, languageCode, Constants.COMMONS_DB_NAME,
                         pageTitle.prefixedText, binding.fragmentDescriptionEditView.description.orEmpty(),
                         getEditComment(), editToken, if (AccountUtil.isLoggedIn) "user" else null)
             } else {
-                ServiceFactory.get(wikiData).postDescriptionEdit(languageCode, languageCode, pageTitle.wikiSite.dbName(),
+                ServiceFactory.get(Constants.wikidataWikiSite).postDescriptionEdit(languageCode, languageCode, pageTitle.wikiSite.dbName(),
                         pageTitle.prefixedText, binding.fragmentDescriptionEditView.description.orEmpty(), getEditComment(), editToken,
                         if (AccountUtil.isLoggedIn) "user" else null)
             }
@@ -370,13 +386,9 @@ class DescriptionEditFragment : Fragment() {
             L.e(caught)
             if (logError) {
                 funnel.logError(caught.message)
-                EditAttemptStepEvent.logSaveFailure(pageTitle.wikiSite.languageCode)
+                EditAttemptStepEvent.logSaveFailure(pageTitle, EditAttemptStepEvent.INTERFACE_OTHER)
             }
             SuggestedEditsFunnel.get().failure(action)
-        }
-
-        override fun onHelpClick() {
-            FeedbackUtil.showAndroidAppEditingFAQ(requireContext())
         }
 
         override fun onCancelClick() {

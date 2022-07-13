@@ -35,20 +35,20 @@ import java.io.IOException
 
 class SavedPageSyncService : JobIntentService() {
     private val savedPageSyncNotification = SavedPageSyncNotification.instance
-    val app: WikipediaApp = WikipediaApp.getInstance()
+    val app: WikipediaApp = WikipediaApp.instance
 
     override fun onHandleWork(intent: Intent) {
         if (ReadingListSyncAdapter.inProgress()) {
             // Reading list sync was started in the meantime, so bail.
             return
         }
-        val pagesToSave = AppDatabase.getAppDatabase().readingListPageDao().allPagesToBeForcedSave.toMutableList()
+        val pagesToSave = AppDatabase.instance.readingListPageDao().allPagesToBeForcedSave.toMutableList()
         if ((!Prefs.isDownloadOnlyOverWiFiEnabled || DeviceUtil.isOnWiFi) &&
                 Prefs.isDownloadingReadingListArticlesEnabled) {
-            pagesToSave.addAll(AppDatabase.getAppDatabase().readingListPageDao().allPagesToBeSaved)
+            pagesToSave.addAll(AppDatabase.instance.readingListPageDao().allPagesToBeSaved)
         }
-        val pagesToUnSave = AppDatabase.getAppDatabase().readingListPageDao().allPagesToBeUnsaved
-        val pagesToDelete = AppDatabase.getAppDatabase().readingListPageDao().allPagesToBeDeleted
+        val pagesToUnSave = AppDatabase.instance.readingListPageDao().allPagesToBeUnsaved
+        val pagesToDelete = AppDatabase.instance.readingListPageDao().allPagesToBeDeleted
         var shouldSendSyncEvent = false
         try {
             for (page in pagesToDelete) {
@@ -61,11 +61,11 @@ class SavedPageSyncService : JobIntentService() {
             L.e("Error while deleting page: " + e.message)
         } finally {
             if (pagesToDelete.isNotEmpty()) {
-                AppDatabase.getAppDatabase().readingListPageDao().purgeDeletedPages()
+                AppDatabase.instance.readingListPageDao().purgeDeletedPages()
                 shouldSendSyncEvent = true
             }
             if (pagesToUnSave.isNotEmpty()) {
-                AppDatabase.getAppDatabase().readingListPageDao().resetUnsavedPageStatus()
+                AppDatabase.instance.readingListPageDao().resetUnsavedPageStatus()
                 shouldSendSyncEvent = true
             }
         }
@@ -90,7 +90,7 @@ class SavedPageSyncService : JobIntentService() {
     }
 
     private fun deletePageContents(page: ReadingListPage) {
-        Completable.fromAction { AppDatabase.getAppDatabase().offlineObjectDao().deleteObjectsForPageId(page.id) }.subscribeOn(Schedulers.io())
+        Completable.fromAction { AppDatabase.instance.offlineObjectDao().deleteObjectsForPageId(page.id) }.subscribeOn(Schedulers.io())
                 .subscribe({}) { obj -> L.e(obj) }
     }
 
@@ -107,7 +107,7 @@ class SavedPageSyncService : JobIntentService() {
             } else if (savedPageSyncNotification.isSyncCanceled()) {
                 // Mark remaining pages as online-only!
                 queue.add(page)
-                AppDatabase.getAppDatabase().readingListPageDao().markPagesForOffline(queue, offline = false, forcedSave = false)
+                AppDatabase.instance.readingListPageDao().markPagesForOffline(queue, offline = false, forcedSave = false)
                 break
             }
             savedPageSyncNotification.setNotificationProgress(applicationContext, itemsTotal, itemsSaved)
@@ -144,7 +144,7 @@ class SavedPageSyncService : JobIntentService() {
             if (success) {
                 page.status = ReadingListPage.STATUS_SAVED
                 page.sizeBytes = totalSize
-                AppDatabase.getAppDatabase().readingListPageDao().updateReadingListPage(page)
+                AppDatabase.instance.readingListPageDao().updateReadingListPage(page)
                 itemsSaved++
                 sendSyncEvent()
             }
@@ -196,7 +196,7 @@ class SavedPageSyncService : JobIntentService() {
                         page.displayTitle = summaryRsp.body()!!.displayTitle
                         page.description = summaryRsp.body()!!.description
                         reqSaveFiles(page, pageTitle, fileUrls)
-                        val totalSize = AppDatabase.getAppDatabase().offlineObjectDao().getTotalBytesForPageId(page.id)
+                        val totalSize = AppDatabase.instance.offlineObjectDao().getTotalBytesForPageId(page.id)
                         L.i("Saved page " + pageTitle.prefixedText + " (" + totalSize + ")")
                         totalSize
                     }
@@ -295,7 +295,7 @@ class SavedPageSyncService : JobIntentService() {
     }
 
     private fun persistPageThumbnail(title: PageTitle, url: String) {
-        AppDatabase.getAppDatabase().pageImagesDao().insertPageImage(PageImage(title, url))
+        AppDatabase.instance.pageImagesDao().insertPageImage(PageImage(title, url))
     }
 
     private fun isRetryable(t: Throwable): Boolean {
@@ -318,25 +318,22 @@ class SavedPageSyncService : JobIntentService() {
         const val MEDIA_LIST_PROGRESS = 30
 
         private val ENQUEUE_RUNNABLE = Runnable {
-            enqueueWork(WikipediaApp.getInstance(),
-                    SavedPageSyncService::class.java, JOB_ID, Intent(WikipediaApp.getInstance(), SavedPageSyncService::class.java))
+            enqueueWork(WikipediaApp.instance,
+                    SavedPageSyncService::class.java, JOB_ID, Intent(WikipediaApp.instance, SavedPageSyncService::class.java))
         }
 
-        @JvmStatic
         fun enqueue() {
             if (ReadingListSyncAdapter.inProgress()) {
                 return
             }
-            WikipediaApp.getInstance().mainThreadHandler.removeCallbacks(ENQUEUE_RUNNABLE)
-            WikipediaApp.getInstance().mainThreadHandler.postDelayed(ENQUEUE_RUNNABLE, ENQUEUE_DELAY_MILLIS.toLong())
+            WikipediaApp.instance.mainThreadHandler.removeCallbacks(ENQUEUE_RUNNABLE)
+            WikipediaApp.instance.mainThreadHandler.postDelayed(ENQUEUE_RUNNABLE, ENQUEUE_DELAY_MILLIS.toLong())
         }
 
-        @JvmStatic
-        @JvmOverloads
         fun sendSyncEvent(showMessage: Boolean = false) {
             // Note: this method posts from a background thread but subscribers expect events to be
             // received on the main thread.
-            WikipediaApp.getInstance().bus.post(ReadingListSyncEvent(showMessage))
+            WikipediaApp.instance.bus.post(ReadingListSyncEvent(showMessage))
         }
     }
 }

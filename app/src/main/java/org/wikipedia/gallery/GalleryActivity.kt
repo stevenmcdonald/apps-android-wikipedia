@@ -39,8 +39,6 @@ import org.wikipedia.databinding.ActivityGalleryBinding
 import org.wikipedia.dataclient.Service
 import org.wikipedia.dataclient.ServiceFactory
 import org.wikipedia.dataclient.WikiSite
-import org.wikipedia.dataclient.mwapi.MwQueryResponse
-import org.wikipedia.dataclient.mwapi.media.MediaHelper
 import org.wikipedia.descriptions.DescriptionEditActivity
 import org.wikipedia.history.HistoryEntry
 import org.wikipedia.page.ExclusiveBottomSheetPresenter
@@ -83,7 +81,7 @@ class GalleryActivity : BaseActivity(), LinkPreviewDialog.Callback, GalleryItemF
      */
     private var initialImageIndex = -1
     private var targetLanguageCode: String? = null
-    private val app = WikipediaApp.getInstance()
+    private val app = WikipediaApp.instance
     private val bottomSheetPresenter = ExclusiveBottomSheetPresenter()
     private val downloadReceiver = MediaDownloadReceiver()
     private val downloadReceiverCallback = MediaDownloadReceiverCallback()
@@ -295,7 +293,7 @@ class GalleryActivity : BaseActivity(), LinkPreviewDialog.Callback, GalleryItemF
     private fun startCaptionTranslation(item: GalleryItemFragment) {
         val sourceTitle = PageTitle(item.imageTitle!!.prefixedText, WikiSite(Service.COMMONS_URL, sourceWiki.languageCode))
         val targetTitle = PageTitle(item.imageTitle!!.prefixedText, WikiSite(Service.COMMONS_URL,
-            targetLanguageCode ?: app.language().appLanguageCodes[1]))
+            targetLanguageCode ?: app.languageState.appLanguageCodes[1]))
         val currentCaption = item.mediaInfo!!.captions[sourceWiki.languageCode].orEmpty().ifEmpty {
             RichTextUtil.stripHtml(item.mediaInfo!!.metadata!!.imageDescription())
         }
@@ -432,14 +430,14 @@ class GalleryActivity : BaseActivity(), LinkPreviewDialog.Callback, GalleryItemF
         L.v("Link clicked was $urlStr")
         var url = UriUtil.resolveProtocolRelativeUrl(urlStr)
         if (url.startsWith("/wiki/")) {
-            val title = app.wikiSite.titleForInternalLink(url)
+            val title = PageTitle.titleForInternalLink(url, app.wikiSite)
             showLinkPreview(title)
         } else {
             val uri = Uri.parse(url)
             val authority = uri.authority
             if (authority != null && WikiSite.supportedAuthority(authority) &&
                 uri.path != null && uri.path!!.startsWith("/wiki/")) {
-                val title = WikiSite(uri).titleForUri(uri)
+                val title = PageTitle.titleForUri(uri, WikiSite(uri))
                 showLinkPreview(title)
             } else {
                 // if it's a /w/ URI, turn it into a full URI and go external
@@ -463,7 +461,7 @@ class GalleryActivity : BaseActivity(), LinkPreviewDialog.Callback, GalleryItemF
     }
 
     override fun onLinkPreviewCopyLink(title: PageTitle) {
-        ClipboardUtil.setPlainText(this, null, title.uri)
+        ClipboardUtil.setPlainText(this, text = title.uri)
         FeedbackUtil.showMessage(this, R.string.address_copied)
     }
 
@@ -547,22 +545,22 @@ class GalleryActivity : BaseActivity(), LinkPreviewDialog.Callback, GalleryItemF
         updateProgressBar(true)
         disposeImageCaptionDisposable()
         imageCaptionDisposable =
-            Observable.zip<Map<String, String>, MwQueryResponse, Map<String, List<String>>, Pair<Boolean, Int>>(
-                MediaHelper.getImageCaptions(item.imageTitle!!.prefixedText),
-                ServiceFactory.get(WikiSite(Service.COMMONS_URL)).getProtectionInfo(item.imageTitle!!.prefixedText),
-                ImageTagsProvider.getImageTagsObservable(currentItem!!.mediaPage!!.pageId, sourceWiki.languageCode),
-                { captions, protectionInfoRsp, imageTags ->
-                    item.mediaInfo!!.captions = captions
-                    Pair(protectionInfoRsp.query?.isEditProtected, imageTags.size)
-                })
-                .subscribeOn(Schedulers.io())
-                .observeOn(AndroidSchedulers.mainThread())
-                .subscribe({
-                    updateGalleryDescription(it.first, it.second)
-                }, {
-                    L.e(it)
-                    updateGalleryDescription(false, 0)
-                })
+            Observable.zip(
+                ServiceFactory.get(Constants.commonsWikiSite).getEntitiesByTitle(item.imageTitle!!.prefixedText, Constants.COMMONS_DB_NAME),
+                ServiceFactory.get(Constants.commonsWikiSite).getProtectionInfo(item.imageTitle!!.prefixedText)
+            ) { entities, protectionInfoRsp ->
+                val captions = entities.first?.labels?.values?.associate { it.language to it.value }.orEmpty()
+                item.mediaInfo!!.captions = captions
+                val depicts = ImageTagsProvider.getDepictsClaims(entities.first?.statements.orEmpty())
+                Pair(protectionInfoRsp.query?.isEditProtected == true, depicts.size)
+            }.subscribeOn(Schedulers.io())
+            .observeOn(AndroidSchedulers.mainThread())
+            .subscribe({
+                updateGalleryDescription(it.first, it.second)
+            }, {
+                L.e(it)
+                updateGalleryDescription(false, 0)
+            })
     }
 
     fun updateGalleryDescription(isProtected: Boolean, tagsCount: Int) {
@@ -609,13 +607,13 @@ class GalleryActivity : BaseActivity(), LinkPreviewDialog.Callback, GalleryItemF
 
         // and if we have another language in which the caption doesn't exist, then offer
         // it to be translatable.
-        if (app.language().appLanguageCodes.size > 1) {
-            for (lang in app.language().appLanguageCodes) {
+        if (app.languageState.appLanguageCodes.size > 1) {
+            for (lang in app.languageState.appLanguageCodes) {
                 if (!item.mediaInfo!!.captions.containsKey(lang)) {
                     targetLanguageCode = lang
                     imageEditType = ImageEditType.ADD_CAPTION_TRANSLATION
                     binding.ctaButtonText.text = getString(R.string.gallery_add_image_caption_in_language_button,
-                        app.language().getAppLanguageLocalizedName(targetLanguageCode))
+                        app.languageState.getAppLanguageLocalizedName(targetLanguageCode))
                     break
                 }
             }

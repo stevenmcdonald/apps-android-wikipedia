@@ -1,5 +1,8 @@
 package org.wikipedia
 
+import org.wikipedia.dataclient.Service
+import org.wikipedia.dataclient.WikiSite
+
 object Constants {
 
     const val ACTIVITY_REQUEST_ADD_A_LANGUAGE = 59
@@ -57,11 +60,17 @@ object Constants {
     const val SUGGESTION_REQUEST_ITEMS = 5
 
     const val WIKI_CODE_COMMONS = "commons"
+    const val COMMONS_DB_NAME = "commonswiki"
     const val WIKI_CODE_WIKIDATA = "wikidata"
+    const val WIKIDATA_DB_NAME = "wikidatawiki"
+
+    val commonsWikiSite = WikiSite(Service.COMMONS_URL)
+    val wikidataWikiSite = WikiSite(Service.WIKIDATA_URL)
 
     enum class InvokeSource(val value: String) {
         ANNOUNCEMENT("announcement"),
         APP_SHORTCUTS("appShortcuts"),
+        ARCHIVED_TALK_ACTIVITY("archivedTalkActivity"),
         BOOKMARK_BUTTON("bookmark"),
         CONTEXT_MENU("contextMenu"),
         DIFF_ACTIVITY("diffActivity"),
@@ -87,6 +96,9 @@ object Constants {
         ONBOARDING_DIALOG("onboarding"),
         PAGE_ACTION_TAB("pageActionTab"),
         PAGE_ACTIVITY("page"),
+        PAGE_DESCRIPTION_CTA("pageDescCta"),
+        PAGE_EDIT_PENCIL("pageEditPencil"),
+        PAGE_EDIT_HIGHLIGHT("pageEditHighlight"),
         PAGE_OVERFLOW_MENU("pageOverflowMenu"),
         RANDOM_ACTIVITY("random"),
         READ_MORE_BOOKMARK_BUTTON("readMoreBookmark"),
