@@ -36,15 +36,6 @@ final JavaVersion JAVA_VERSION = JavaVersion.VERSION_1_8
 
 android {
 
-    signingConfigs {
-        greatfire {
-            storeFile file('INSERT_PATH')
-            storePassword 'INSERT_PASSWORD'
-            keyPassword 'INSERT_PASSWORD'
-            keyAlias 'INSERT_ALIAS'
-        }
-    }
-
     if (project.hasProperty("dnsttserver")) {
         dnsttServerProp = dnsttserver
     } else {
@@ -128,8 +119,6 @@ android {
         packagingOptions {
             doNotStrip '**/libcronet*.so'
         }
-
-        signingConfig signingConfigs.greatfire
     }
 
     testOptions {
