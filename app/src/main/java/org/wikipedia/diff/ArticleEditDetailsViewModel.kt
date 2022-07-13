@@ -11,6 +11,8 @@ import org.wikipedia.dataclient.ServiceFactory
 import org.wikipedia.dataclient.WikiSite
 import org.wikipedia.dataclient.mwapi.MwQueryPage
 import org.wikipedia.dataclient.restbase.DiffResponse
+import org.wikipedia.dataclient.restbase.Revision
+import org.wikipedia.dataclient.rollback.RollbackPostResponse
 import org.wikipedia.dataclient.watch.WatchPostResponse
 import org.wikipedia.dataclient.wikidata.EntityPostResponse
 import org.wikipedia.edit.Edit
@@ -22,11 +24,14 @@ import org.wikipedia.watchlist.WatchlistExpiry
 class ArticleEditDetailsViewModel(bundle: Bundle) : ViewModel() {
 
     val watchedStatus = MutableLiveData<Resource<MwQueryPage>>()
+    val rollbackRights = MutableLiveData<Resource<Boolean>>()
     val revisionDetails = MutableLiveData<Resource<Unit>>()
     val diffText = MutableLiveData<Resource<DiffResponse>>()
+    val singleRevisionText = MutableLiveData<Resource<Revision>>()
     val thankStatus = SingleLiveData<Resource<EntityPostResponse>>()
     val watchResponse = SingleLiveData<Resource<WatchPostResponse>>()
     val undoEditResponse = SingleLiveData<Resource<Edit>>()
+    val rollbackResponse = SingleLiveData<Resource<RollbackPostResponse>>()
 
     var watchlistExpiryChanged = false
     var lastWatchExpiry = WatchlistExpiry.NEVER
@@ -39,6 +44,7 @@ class ArticleEditDetailsViewModel(bundle: Bundle) : ViewModel() {
     var revisionFromId = bundle.getLong(ArticleEditDetailsActivity.EXTRA_EDIT_REVISION_FROM, -1)
     var revisionFrom: MwQueryPage.Revision? = null
     var canGoForward = false
+    var hasRollbackRights = false
 
     private var diffRevisionId = 0L
 
@@ -48,6 +54,7 @@ class ArticleEditDetailsViewModel(bundle: Bundle) : ViewModel() {
 
     init {
         getWatchedStatusAndPageId()
+        checkRollbackRights()
         getRevisionDetails(revisionToId, revisionFromId)
     }
 
@@ -59,6 +66,18 @@ class ArticleEditDetailsViewModel(bundle: Bundle) : ViewModel() {
                 val page = ServiceFactory.get(pageTitle.wikiSite).getWatchedStatus(pageTitle.prefixedText).query?.firstPage()!!
                 pageId = page.pageId
                 watchedStatus.postValue(Resource.Success(page))
+            }
+        }
+    }
+
+    private fun checkRollbackRights() {
+        viewModelScope.launch(CoroutineExceptionHandler { _, throwable ->
+            rollbackRights.postValue(Resource.Error(throwable))
+        }) {
+            withContext(Dispatchers.IO) {
+                val userRights = ServiceFactory.get(pageTitle.wikiSite).userRights().query?.userInfo?.rights
+                hasRollbackRights = userRights?.contains("rollback") == true
+                rollbackRights.postValue(Resource.Success(hasRollbackRights))
             }
         }
     }
@@ -129,7 +148,11 @@ class ArticleEditDetailsViewModel(bundle: Bundle) : ViewModel() {
             diffText.postValue(Resource.Error(throwable))
         }) {
             withContext(Dispatchers.IO) {
-                diffText.postValue(Resource.Success(ServiceFactory.getCoreRest(pageTitle.wikiSite).getDiff(oldRevisionId, newRevisionId)))
+                if (oldRevisionId > 0) {
+                    diffText.postValue(Resource.Success(ServiceFactory.getCoreRest(pageTitle.wikiSite).getDiff(oldRevisionId, newRevisionId)))
+                } else {
+                    singleRevisionText.postValue(Resource.Success(ServiceFactory.getCoreRest(pageTitle.wikiSite).getRevision(newRevisionId)))
+                }
                 diffRevisionId = newRevisionId
             }
         }
@@ -140,7 +163,7 @@ class ArticleEditDetailsViewModel(bundle: Bundle) : ViewModel() {
             thankStatus.postValue(Resource.Error(throwable))
         }) {
             withContext(Dispatchers.IO) {
-                val token = ServiceFactory.get(wikiSite).getCsrfToken().query?.csrfToken()
+                val token = ServiceFactory.get(wikiSite).getToken().query?.csrfToken()
                 thankStatus.postValue(Resource.Success(ServiceFactory.get(wikiSite).postThanksToRevision(revisionId, token!!)))
             }
         }
@@ -187,10 +210,22 @@ class ArticleEditDetailsViewModel(bundle: Bundle) : ViewModel() {
                 val msgResponse = ServiceFactory.get(title.wikiSite).getMessages("undo-summary", "$revisionId|$user")
                 val undoMessage = msgResponse.query?.allmessages?.find { it.name == "undo-summary" }?.content
                 val summary = if (undoMessage != null) "$undoMessage $comment" else comment
-                val token = ServiceFactory.get(title.wikiSite).getCsrfToken().query!!.csrfToken()!!
+                val token = ServiceFactory.get(title.wikiSite).getToken().query!!.csrfToken()!!
                 val undoResponse = ServiceFactory.get(title.wikiSite).postUndoEdit(title.prefixedText, summary,
                         null, token, revisionId, if (revisionIdAfter > 0) revisionIdAfter else null)
                 undoEditResponse.postValue(Resource.Success(undoResponse))
+            }
+        }
+    }
+
+    fun postRollback(title: PageTitle, user: String) {
+        viewModelScope.launch(CoroutineExceptionHandler { _, throwable ->
+            rollbackResponse.postValue(Resource.Error(throwable))
+        }) {
+            withContext(Dispatchers.IO) {
+                val rollbackToken = ServiceFactory.get(title.wikiSite).getToken("rollback").query!!.rollbackToken()!!
+                val rollbackPostResponse = ServiceFactory.get(title.wikiSite).postRollback(title.prefixedText, null, user, rollbackToken)
+                rollbackResponse.postValue(Resource.Success(rollbackPostResponse))
             }
         }
     }

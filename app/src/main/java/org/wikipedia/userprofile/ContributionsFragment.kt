@@ -160,16 +160,17 @@ class ContributionsFragment : Fragment(), ContributionsHeaderView.Callback {
             })
         }
 
-        disposables.add(Observable.zip(homeSiteObservable(), wikiDataObservable(), wikiCommonsObservable(), {
+        disposables.add(Observable.zip(homeSiteObservable(), wikiDataObservable(), wikiCommonsObservable()) {
                 homeSiteContributions, wikidataContributions, commonsContributions ->
-                    val totalContributionCount = homeSiteContributions.second + wikidataContributions.second + commonsContributions.second
+                    val totalContributionCount =
+                        homeSiteContributions.second + wikidataContributions.second + commonsContributions.second
                     val contributions = mutableListOf<Contribution>()
                     contributions.addAll(homeSiteContributions.first)
                     contributions.addAll(wikidataContributions.first)
                     contributions.addAll(commonsContributions.first)
                     Pair(contributions, totalContributionCount)
-                })
-                .subscribeOn(Schedulers.io())
+            }
+            .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
                 .doAfterTerminate {
                     binding.swipeRefreshLayout.isRefreshing = false
@@ -186,20 +187,20 @@ class ContributionsFragment : Fragment(), ContributionsHeaderView.Callback {
     }
 
     private fun homeSiteObservable(): Observable<Pair<List<Contribution>, Int>> {
-        return if (allContributions.isNotEmpty() && !continuations.containsKey(WikipediaApp.getInstance().wikiSite)) Observable.just(Pair(Collections.emptyList(), -1))
-        else ServiceFactory.get(WikipediaApp.getInstance().wikiSite).getUserContributions(AccountUtil.userName!!, 50, continuations[WikipediaApp.getInstance().wikiSite])
+        return if (allContributions.isNotEmpty() && !continuations.containsKey(WikipediaApp.instance.wikiSite)) Observable.just(Pair(Collections.emptyList(), -1))
+        else ServiceFactory.get(WikipediaApp.instance.wikiSite).getUserContributions(AccountUtil.userName!!, 50, continuations[WikipediaApp.instance.wikiSite])
             .subscribeOn(Schedulers.io())
             .flatMap { response ->
                 val contributions = mutableListOf<Contribution>()
                 val cont = response.continuation?.ucContinuation
                 if (cont.isNullOrEmpty()) {
-                    continuations.remove(WikipediaApp.getInstance().wikiSite)
+                    continuations.remove(WikipediaApp.instance.wikiSite)
                 } else {
-                    continuations[WikipediaApp.getInstance().wikiSite] = cont
+                    continuations[WikipediaApp.instance.wikiSite] = cont
                 }
                 response.query?.userContributions?.forEach {
-                    contributions.add(Contribution("", it.revid, it.title, it.title, it.title, EDIT_TYPE_GENERIC, null, it.date(),
-                        WikipediaApp.getInstance().wikiSite, 0, it.sizediff, it.top, 0))
+                    contributions.add(Contribution("", it.revid, it.ns, it.title, it.title, it.title, EDIT_TYPE_GENERIC, null, it.date(),
+                        WikipediaApp.instance.wikiSite, 0, it.sizediff, it.top, 0))
                 }
                 Observable.just(Pair(contributions, response.query?.userInfo!!.editCount))
             }
@@ -219,7 +220,7 @@ class ContributionsFragment : Fragment(), ContributionsHeaderView.Callback {
                     continuations[Constants.wikidataWikiSite] = cont
                 }
                 response.query?.userContributions?.forEach { contribution ->
-                    var contributionLanguage = WikipediaApp.getInstance().appOrSystemLanguageCode
+                    var contributionLanguage = WikipediaApp.instance.appOrSystemLanguageCode
                     var contributionDescription = contribution.comment
                     var editType: Int = EDIT_TYPE_GENERIC
                     var qNumber = ""
@@ -245,7 +246,7 @@ class ContributionsFragment : Fragment(), ContributionsHeaderView.Callback {
                         qLangMap[qNumber] = HashSet()
                     }
 
-                    wikidataContributions.add(Contribution(qNumber, contribution.revid, contribution.title, contribution.title, contributionDescription, editType, null, contribution.date(),
+                    wikidataContributions.add(Contribution(qNumber, contribution.revid, contribution.ns, contribution.title, contribution.title, contributionDescription, editType, null, contribution.date(),
                         WikiSite.forLanguageCode(contributionLanguage), 0, contribution.sizediff, contribution.top, 0))
 
                     qLangMap[qNumber]?.add(contributionLanguage)
@@ -280,7 +281,7 @@ class ContributionsFragment : Fragment(), ContributionsHeaderView.Callback {
                         continuations[Constants.commonsWikiSite] = cont
                     }
                     response.query?.userContributions?.forEach { contribution ->
-                        var contributionLanguage = WikipediaApp.getInstance().appOrSystemLanguageCode
+                        var contributionLanguage = WikipediaApp.instance.appOrSystemLanguageCode
                         var editType: Int = EDIT_TYPE_GENERIC
                         var contributionDescription = contribution.comment
                         var qNumber = ""
@@ -320,7 +321,7 @@ class ContributionsFragment : Fragment(), ContributionsHeaderView.Callback {
                             }
                         }
 
-                        contributions.add(Contribution(qNumber, contribution.revid, contribution.title, contribution.title, contributionDescription, editType, null, contribution.date(),
+                        contributions.add(Contribution(qNumber, contribution.revid, contribution.ns, contribution.title, contribution.title, contributionDescription, editType, null, contribution.date(),
                             WikiSite.forLanguageCode(contributionLanguage), 0, contribution.sizediff, contribution.top, tagCount))
                     }
                     Observable.just(Pair(contributions, response.query?.userInfo!!.editCount))
@@ -346,7 +347,7 @@ class ContributionsFragment : Fragment(), ContributionsHeaderView.Callback {
         }
         sortedContributions.sortByDescending { it.date }
 
-        if (!sortedContributions.isNullOrEmpty()) {
+        if (sortedContributions.isNotEmpty()) {
             var currentDate = sortedContributions[0].date
             var nextDate: Date
             displayedContributions.add(getCorrectDateString(currentDate))
@@ -438,7 +439,7 @@ class ContributionsFragment : Fragment(), ContributionsHeaderView.Callback {
                 view.setDescription(StringUtil.removeNamespace(contribution.displayTitle))
             }
             view.setDiffCountText(contribution)
-            view.setIcon(contribution.editType)
+            view.setIcon(contribution)
             view.setImageUrl(contribution.imageUrl)
             view.setPageViewCountText(contribution.pageViews)
             if (contribution.pageViews == 0L && contribution.editType == EDIT_TYPE_ARTICLE_DESCRIPTION) {

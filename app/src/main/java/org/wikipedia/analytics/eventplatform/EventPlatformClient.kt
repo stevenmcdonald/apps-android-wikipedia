@@ -7,7 +7,7 @@ import org.wikipedia.dataclient.ServiceFactory
 import org.wikipedia.dataclient.WikiSite
 import org.wikipedia.dataclient.okhttp.HttpStatusException
 import org.wikipedia.settings.Prefs
-import org.wikipedia.util.DateUtil
+import org.wikipedia.util.ReleaseUtil
 import org.wikipedia.util.log.L
 import java.net.HttpURLConnection
 import java.util.*
@@ -26,7 +26,7 @@ object EventPlatformClient {
      * Inputs: network connection state on/off, connection state bad y/n?
      * Taken out of iOS client, but flag can be set on the request object to wait until connected to send
      */
-    private var ENABLED = WikipediaApp.getInstance().isOnline
+    private var ENABLED = WikipediaApp.instance.isOnline
 
     fun setStreamConfig(streamConfig: StreamConfig) {
         STREAM_CONFIGS[streamConfig.streamName] = streamConfig
@@ -59,28 +59,10 @@ object EventPlatformClient {
      */
     @Synchronized
     fun submit(event: Event) {
-        if (!SamplingController.isInSample(event)) {
+        if (!SamplingController.isInSample(event) || (event is BreadCrumbLogEvent && ReleaseUtil.isProdRelease)) {
             return
         }
-        addEventMetadata(event)
         OutputBuffer.schedule(event)
-    }
-
-    /**
-     * Supplement the outgoing event with additional metadata, if not already present.
-     * These include:
-     * - dt: ISO 8601 timestamp
-     * - app_session_id: the current session ID
-     * - app_install_id: app install ID
-     *
-     * @param event event
-     */
-    fun addEventMetadata(event: Event) {
-        if (event is MobileAppsEvent) {
-            event.sessionId = AssociationController.sessionId
-            event.appInstallId = Prefs.appInstallId
-        }
-        event.dt = DateUtil.iso8601DateFormat(Date())
     }
 
     fun flushCachedEvents() {
@@ -123,12 +105,12 @@ object EventPlatformClient {
          * If another item is added to QUEUE during this time, reset the countdown.
          */
         private const val WAIT_MS = 30000
-        private const val MAX_QUEUE_SIZE = 64
+        private const val MAX_QUEUE_SIZE = 128
         private val SEND_RUNNABLE = Runnable { sendAllScheduled() }
 
         @Synchronized
         fun sendAllScheduled() {
-            WikipediaApp.getInstance().mainThreadHandler.removeCallbacks(SEND_RUNNABLE)
+            WikipediaApp.instance.mainThreadHandler.removeCallbacks(SEND_RUNNABLE)
             if (ENABLED) {
                 send()
                 QUEUE.clear()
@@ -150,8 +132,8 @@ object EventPlatformClient {
                     sendAllScheduled()
                 } else {
                     // The arrival of a new item interrupts the timer and resets the countdown.
-                    WikipediaApp.getInstance().mainThreadHandler.removeCallbacks(SEND_RUNNABLE)
-                    WikipediaApp.getInstance().mainThreadHandler.postDelayed(SEND_RUNNABLE, WAIT_MS.toLong())
+                    WikipediaApp.instance.mainThreadHandler.removeCallbacks(SEND_RUNNABLE)
+                    WikipediaApp.instance.mainThreadHandler.postDelayed(SEND_RUNNABLE, WAIT_MS.toLong())
                 }
             }
         }
@@ -171,7 +153,10 @@ object EventPlatformClient {
         }
 
         fun sendEventsForStream(streamConfig: StreamConfig, events: List<Event>) {
-            ServiceFactory.getAnalyticsRest(streamConfig).postEventsHasty(events)
+            (if (ReleaseUtil.isDevRelease)
+                ServiceFactory.getAnalyticsRest(streamConfig).postEvents(events)
+            else
+                ServiceFactory.getAnalyticsRest(streamConfig).postEventsHasty(events))
                     .subscribeOn(Schedulers.io())
                     .subscribe({
                         when (it.code()) {
@@ -305,28 +290,28 @@ object EventPlatformClient {
             if (samplingConfig.rate == 0.0) {
                 return false
             }
-            val inSample = getSamplingValue(samplingConfig.getIdentifier()) < samplingConfig.rate
+            val inSample = getSamplingValue(samplingConfig.unit) < samplingConfig.rate
             SAMPLING_CACHE[stream] = inSample
             return inSample
         }
 
         /**
-         * @param identifier identifier type from sampling config
+         * @param unit Unit type from sampling config
          * @return a floating point value between 0.0 and 1.0 (inclusive)
          */
-        fun getSamplingValue(identifier: SamplingConfig.Identifier): Double {
-            val token = getSamplingId(identifier).substring(0, 8)
+        fun getSamplingValue(unit: String): Double {
+            val token = getSamplingId(unit).substring(0, 8)
             return token.toLong(16).toDouble() / 0xFFFFFFFFL.toDouble()
         }
 
-        fun getSamplingId(identifier: SamplingConfig.Identifier): String {
-            if (identifier === SamplingConfig.Identifier.SESSION) {
+        fun getSamplingId(unit: String): String {
+            if (unit === SamplingConfig.UNIT_SESSION) {
                 return AssociationController.sessionId
             }
-            if (identifier === SamplingConfig.Identifier.PAGEVIEW) {
+            if (unit === SamplingConfig.UNIT_PAGEVIEW) {
                 return AssociationController.pageViewId
             }
-            if (identifier === SamplingConfig.Identifier.DEVICE) {
+            if (unit === SamplingConfig.UNIT_DEVICE) {
                 return Prefs.appInstallId.orEmpty()
             }
             throw RuntimeException("Bad identifier type")

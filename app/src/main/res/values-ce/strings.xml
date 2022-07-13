@@ -76,7 +76,7 @@
   <string name="menu_gallery_visit_image_page">Файлан агӀонг гӀо</string>
   <string name="gallery_error_draw_failed">Сурт гучудаккха цаделира</string>
   <string name="license_title" fuzzy="true">Лицензин йоза %s библиотекина</string>
-  <string name="gallery_error_video_failed">Видео йолаялита цаелира.</string>
+  <string name="gallery_error_video_failed">Видео йолайалита цайелира.</string>
   <string name="error_blocked_start">Блокан йуьхь:%s</string>
   <string name="error_blocked_id">Блокан ID: %s</string>
   <string name="crash_report_relaunch">Йуха доладан</string>
@@ -87,7 +87,7 @@
   <string name="view_main_page_card_title">Тахана Википедехь</string>
   <string name="view_featured_image_card_download">Чуйаккха</string>
   <string name="menu_feed_card_dismiss">ХӀара карточка къайлайаккха</string>
-  <string name="menu_feed_card_dismissed">Карточка къайлаяьккхина.</string>
+  <string name="menu_feed_card_dismissed">Карточка къайлайаьккхина.</string>
   <string name="menu_feed_overflow_label">Дукха таронаш</string>
   <string name="feed_featured_image_share_subject">Викиларман дика суьрташ</string>
   <string name="feed">Талла</string>

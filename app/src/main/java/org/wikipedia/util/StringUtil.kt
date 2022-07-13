@@ -23,6 +23,7 @@ import org.wikipedia.staticdata.UserAliasData
 import java.nio.charset.StandardCharsets
 import java.text.Collator
 import java.text.Normalizer
+import kotlin.math.absoluteValue
 import kotlin.math.roundToInt
 
 object StringUtil {
@@ -211,7 +212,9 @@ object StringUtil {
                 c <= 0x1FFFFF -> count = 4
             }
             for (j in 0 until count) {
-                indices[ptr++] = i
+                if (ptr < indices.size) {
+                    indices[ptr++] = i
+                }
             }
         }
         return indices
@@ -242,5 +245,9 @@ object StringUtil {
                 )
             }
         }
+    }
+
+    fun getDiffBytesText(context: Context, diffSize: Int): String {
+        return context.resources.getQuantityString(R.plurals.edit_diff_bytes, diffSize.absoluteValue, if (diffSize > 0) "+$diffSize" else diffSize.toString())
     }
 }

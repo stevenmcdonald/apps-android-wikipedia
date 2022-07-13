@@ -423,8 +423,6 @@
   <string name="theme_category_reading">Branje</string>
   <string name="reading_focus_mode">Način za branje</string>
   <string name="reading_focus_mode_detail">Skrije možnosti urejanja in orodno vrstico na dnu ob pomikanju</string>
-  <string name="theme_category_toolbar">Orodna vrstica</string>
-  <string name="theme_customize_toolbar">Prilagodi orodno vrstico</string>
   <string name="nav_item_saved">Shranjeno</string>
   <string name="reading_list_save_to">Shrani na bralni seznam</string>
   <string name="reading_list_move_to">Prestavi na bralni seznam</string>
@@ -664,7 +662,7 @@
   <string name="preference_title_notification_user_talk">Pogovorna stran</string>
   <string name="preference_summary_notification_user_talk">Sporočila in odgovori s pogovornih strani</string>
   <string name="preference_title_notification_email_user">Prejeta e-pošta</string>
-  <string name="preference_summary_notification_email_user">Nekdo vam je iz vikija poslal e-pošto</string>
+  <string name="preference_summary_notification_email_user">Nekdo iz vikija vam je poslal e-pošto</string>
   <string name="preference_title_notification_user_rights">Spremembe uporabniških pravic</string>
   <string name="preference_summary_notification_user_rights">Prejeto ob spremembi vaših uporabniških pravic</string>
   <string name="preference_title_notification_article_linked">Povezave na članke, ki ste jih ustvarili</string>
@@ -803,7 +801,6 @@
   <string name="description_edit_tutorial_button_label_start_editing">Začetek urejanja</string>
   <string name="description_edit_tutorial_promise">Ob začetku obljubljam, da te funkcije ne bom zlorabil/a</string>
   <string name="customize_toolbar_title">Prilagodi orodno vrstico</string>
-  <string name="customize_toolbar_description_text">Prilagodite si orodno vrstico na dnu s 5 za vas najuporabnejšimi povezavami.</string>
   <string name="customize_toolbar_category_toolbar">Orodna vrstica</string>
   <string name="customize_toolbar_category_menu">Meni</string>
   <string name="customize_toolbar_reset_to_default_button">Ponastavi na privzeto</string>
@@ -906,7 +903,7 @@
   <string name="suggested_edits_edit_streak_label_text">Niz urejanj</string>
   <string name="suggested_edits_views_label_text">Ogledov</string>
   <string name="suggested_edits_quality_label_text">Kakovost urejanj</string>
-  <string name="suggested_edits_quality_perfect_text">Popolna</string>
+  <string name="suggested_edits_quality_perfect_text">Popolno</string>
   <string name="suggested_edits_quality_excellent_text">Odlična</string>
   <string name="suggested_edits_quality_very_good_text">Zelo dobra</string>
   <string name="suggested_edits_quality_good_text">Dobra</string>

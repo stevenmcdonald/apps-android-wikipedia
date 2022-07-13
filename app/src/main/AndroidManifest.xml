@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
-    package="org.wikipedia"
     android:installLocation="auto"
     tools:node="strict">
     <!--
@@ -49,6 +48,9 @@
         <intent>
             <action android:name="android.intent.action.VIEW" />
             <data android:scheme="https" />
+        </intent>
+        <intent>
+            <action android:name="android.speech.action.RECOGNIZE_SPEECH" />
         </intent>
     </queries>
 
@@ -201,12 +203,12 @@
             android:name=".search.SearchActivity"
             android:windowSoftInputMode="adjustResize"
             android:exported="true">
-            <intent-filter android:label="@string/intent_share_search_label">
+            <intent-filter android:label="@string/search_hint">
                 <action android:name="android.intent.action.SEND" />
                 <category android:name="android.intent.category.DEFAULT" />
                 <data android:mimeType="text/plain" />
             </intent-filter>
-            <intent-filter android:label="@string/intent_share_search_label">
+            <intent-filter android:label="@string/search_hint">
                 <action android:name="android.intent.action.PROCESS_TEXT" />
                 <category android:name="android.intent.category.DEFAULT" />
                 <data android:mimeType="text/plain" />
@@ -293,6 +295,12 @@
 
         <activity
             android:name=".talk.TalkTopicActivity" />
+
+        <activity
+            android:name=".talk.TalkReplyActivity" />
+
+        <activity
+            android:name=".talk.ArchivedTalkPagesActivity" />
 
         <activity
             android:name=".diff.ArticleEditDetailsActivity" />
