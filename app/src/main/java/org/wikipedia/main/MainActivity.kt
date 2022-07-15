@@ -52,11 +52,14 @@ class MainActivity : SingleFragmentActivity<MainFragment>(), MainFragment.Callba
     // urls for additional proxy services, change if there are port conflicts (do not include trailing slash)
     private val ssUrlLocal = "socks5://127.0.0.1:1080"
     private var ssUrlRemote = ""
+    private val hysteriaUrlLocal = "socks5://127.0.0.1:"
+    private var hysteriaUrlRemote = ""
     // add all string values to this list value
     private val possibleUrls = mutableListOf<String>()
 
     // TODO: revisit and refactor
     private var waitingForDnstt = false
+    private var waitingForHysteria = false
     private var waitingForShadowsocks = false
     private var waitingForUrl = false
 
@@ -71,11 +74,18 @@ class MainActivity : SingleFragmentActivity<MainFragment>(), MainFragment.Callba
                     Log.d(TAG, "received " + validUrls?.size + " valid urls")
                     if (waitingForUrl) {
                         if (validUrls != null && !validUrls.isEmpty()) {
-                            waitingForUrl = false
-                            val envoyUrl = validUrls[0]
-                            Log.d(TAG, "found a valid url, start engine")
-                            // select the fastest one (urls are ordered by latency), reInitializeIfNeeded set to false
-                            CronetNetworking.initializeCronetEngine(context, envoyUrl)
+                            if (validUrls.size == 1 && validUrls[0].startsWith("http")) {
+                                Log.d(TAG, "WAITING FOR SOCKS URL...")
+                            } else if (validUrls.size == 2 && validUrls[1].startsWith("socks")) {
+                                Log.d(TAG, "FORCE SOCKS URL...")
+                                waitingForUrl = false
+                                val envoyUrl = validUrls[1]
+                                Log.d(TAG, "found a valid url: " + envoyUrl + ", start engine")
+                                // select the fastest one (urls are ordered by latency), reInitializeIfNeeded set to false
+                                CronetNetworking.initializeCronetEngine(context, envoyUrl)
+                            } else {
+                                Log.d(TAG, "STILL WAITING...")
+                            }
                         } else {
                             Log.e(TAG, "received empty list of valid urls")
                         }
@@ -214,36 +224,96 @@ class MainActivity : SingleFragmentActivity<MainFragment>(), MainFragment.Callba
 
         // parse dnstt urls
         for (i in 0 until envoyUrlArray!!.length()) {
-            if (envoyUrlArray.getString(i).startsWith("ss://")) {
-                Log.d(TAG, "found ss url")
-                possibleUrls.add(ssUrlLocal)
+            if (envoyUrlArray.getString(i).startsWith("hysteria://")) {
+                Log.d(TAG, "found hysteria url")
+                hysteriaUrlRemote = envoyUrlArray.getString(i)
+            } else if (envoyUrlArray.getString(i).startsWith("ss://")) {
+                Log.d(TAG, "found ss url: " + envoyUrlArray.getString(i))
+                //possibleUrls.add(ssUrlLocal)
                 ssUrlRemote = envoyUrlArray.getString(i)
             } else {
-                Log.d(TAG, "found url")
+                Log.d(TAG, "found url: " + envoyUrlArray.getString(i))
                 possibleUrls.add(envoyUrlArray.getString(i))
             }
         }
 
+        // TEMP - TEST HYSTERIA
+        // hysteriaUrlRemote = "172.104.163.54:32323"
+
+        if (hysteriaUrlRemote.isNotEmpty()) {
+            Log.d(TAG, "hysteria service needed")
+            // start hysteria service
+            val hysteriaPort = IEnvoyProxy.startHysteria(
+                hysteriaUrlRemote, "uPa1gar4Guce5ooteyiuthie7soqu5Mu", """
+            -----BEGIN CERTIFICATE-----
+            MIIEzjCCAzagAwIBAgIRAIwE+m2D+1vvzPZaSLj/a7YwDQYJKoZIhvcNAQELBQAw
+            fzEeMBwGA1UEChMVbWtjZXJ0IGRldmVsb3BtZW50IENBMSowKAYDVQQLDCFzY21A
+            bTFwcm8ubG9jYWwgKFN0ZXZlbiBNY0RvbmFsZCkxMTAvBgNVBAMMKG1rY2VydCBz
+            Y21AbTFwcm8ubG9jYWwgKFN0ZXZlbiBNY0RvbmFsZCkwHhcNMjIwMTI3MDE0NTQ5
+            WhcNMzIwMTI3MDE0NTQ5WjB/MR4wHAYDVQQKExVta2NlcnQgZGV2ZWxvcG1lbnQg
+            Q0ExKjAoBgNVBAsMIXNjbUBtMXByby5sb2NhbCAoU3RldmVuIE1jRG9uYWxkKTEx
+            MC8GA1UEAwwobWtjZXJ0IHNjbUBtMXByby5sb2NhbCAoU3RldmVuIE1jRG9uYWxk
+            KTCCAaIwDQYJKoZIhvcNAQEBBQADggGPADCCAYoCggGBANd+mMC9kQWwH+h++vmS
+            Kkqv1xebHKncKT/JAAr6lBG/O9T6V0KEZTgMeVU4XG4C2CVPRzbceADSTN36u2k2
+            +ToGeP6fEc/sz7SD1Uf/Xu6aZCrEuuK8aHchcn2+BgcV5heiKIpQGHVjFzCgez97
+            wXdcNowerpWP42WK5yj2e3+VKBojHouvSBrTj3EaYAn5nQLiIpi7ZqHmq7NorOhS
+            ldaCKO6tp8LRQX0X13FL0o8hNJb7gZuSYxt3NzoP0ZCeKfd9La7409u0ZBUuUrWl
+            k01gPh+6SqrvsqSf3AnpxvlvUfpm1e9LfUZe0S/J1OYOkF2QdQ+wlzHZsYyxZ2uc
+            kRWLYbqXkF93X3O2H0SkjYKB3PFKcWNeUdt3LJ4lNrisX+R+JTU+4XpGYznnIebF
+            /Jt/U9aFkenkE3JHyfe9SDedAqUVO9j6XGRFSK5LuoZsXoEqrqY3DXbUZTsZbkZ2
+            NVtmM+9/bcuBxDgBxUGnvPLRaHO9Y3rkjc+8Qb40iibW8QIDAQABo0UwQzAOBgNV
+            HQ8BAf8EBAMCAgQwEgYDVR0TAQH/BAgwBgEB/wIBADAdBgNVHQ4EFgQUyaGG2QSl
+            nr3VsOPd+7EwfxSIQ7UwDQYJKoZIhvcNAQELBQADggGBAA97ah3o5EUwy/LNSkSK
+            MEYREtZfZp6oz4IjDMCKN9FKtKcqlpbyJVlz/ahIU9/QDqCKcaAJVLmR57fZ/qio
+            HNQcm1yvA6TlprnwMHNtPO3cxsi1p0D7EofAy0oAcRp3NgTOWpX7zTpd2pNIuDy6
+            lmP1iBkUxfXorAN+MR1SzEWYQn2k3hcHesrvTzqGZmcVyRDihLWd7bTeixGO5x8w
+            fNNWTW+Sd6t1vPVR+qBwSLGUKMxoVeenaP8PXn6u5BDzNkwZKQMWQzFlt+DQL61z
+            6t5OU73CYgJ7XIKvKN+eFOG9lvYglo8LyDJ74QbznVh/Hcwzps7t3QB/S7Q1imue
+            7n3hINp1GwDgVmFkk0oIG8+s5z54hxCIABgWZsBr2vtGLvn3+xEDgFtRsY9N4PTO
+            PRHq//BHvTjFt9pwZs5k+EBu9K3I0WZw2PBWhzLiLA7PdkDiDvPw5sJW80vOVo8w
+            lTIm9+lxj2TaeiqcPaVRBUG7cmIx+iUFPnpttnp8SvRWlQ==
+            -----END CERTIFICATE-----
+        """.trimIndent()
+            )
+
+            Log.d(TAG, "hysteria service started at " + hysteriaUrlLocal + hysteriaPort + "/")
+
+            // add url for hysteria service
+            possibleUrls.add(hysteriaUrlLocal + hysteriaPort + "/")
+            waitingForHysteria = true
+        }
+
         // check for urls that require services
-        for (url in possibleUrls) {
+        if (ssUrlRemote.isNotEmpty()) {
             // Notification.Builder in ShadowsocksService.onStartCommand may require api > 7
-            if (url.startsWith("socks5://")) {
-                Log.d(TAG, "shadowsocks service needed, submit urls after starting")
-                // start shadowsocks service
-                val shadowsocksIntent = Intent(this, ShadowsocksService::class.java)
-                // put shadowsocks proxy url here, should look like ss://Y2hhY2hhMjAtaWV0Zi1wb2x5MTMwNTpwYXNz@127.0.0.1:1234 (base64 encode user/password)
-                shadowsocksIntent.putExtra(
-                    "org.greatfire.envoy.START_SS_LOCAL",
-                    ssUrlRemote
-                );
-                waitingForShadowsocks = true
-                ContextCompat.startForegroundService(applicationContext, shadowsocksIntent)
-                return;
-            }
+            Log.d(TAG, "shadowsocks service needed")
+            // start shadowsocks service
+            val shadowsocksIntent = Intent(this, ShadowsocksService::class.java)
+            // put shadowsocks proxy url here, should look like ss://Y2hhY2hhMjAtaWV0Zi1wb2x5MTMwNTpwYXNz@127.0.0.1:1234 (base64 encode user/password)
+            shadowsocksIntent.putExtra(
+                "org.greatfire.envoy.START_SS_LOCAL",
+                ssUrlRemote
+            )
+            ContextCompat.startForegroundService(applicationContext, shadowsocksIntent)
+            // add url for shadowsocks service
+            possibleUrls.add(ssUrlLocal)
+            waitingForShadowsocks = true
+            // return;
         }
 
         if (possibleUrls.isEmpty()) {
             Log.w(TAG, "no urls to submit, cannot setup envoy")
+        } else if (waitingForShadowsocks) {
+            Log.d(TAG, "submit urls after starting shadowsocks service")
+        } else if (waitingForHysteria) {
+            Log.d(TAG, "submit urls after a short delay for starting hysteria")
+            lifecycleScope.launch(Dispatchers.IO) {
+                Log.d(TAG, "start delay")
+                delay(5000L)  // wait 1 second
+                Log.d(TAG, "end delay")
+                waitingForUrl = true
+                NetworkIntentService.submit(this@MainActivity, possibleUrls)
+            }
         } else {
             // submit list of urls to envoy for evaluation
             Log.d(TAG, "no services needed, submit urls immediately")
