@@ -1,11 +1,25 @@
 package org.wikipedia.main
 
+import IEnvoyProxy.IEnvoyProxy
+import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
+import android.content.IntentFilter
 import android.os.Bundle
+import android.util.Log
 import androidx.appcompat.view.ActionMode
 import androidx.appcompat.widget.Toolbar
+import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
+import androidx.lifecycle.lifecycleScope
+import androidx.localbroadcastmanager.content.LocalBroadcastManager
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
+import org.greatfire.envoy.*
+import org.json.JSONArray
+import org.json.JSONObject
+import org.wikipedia.BuildConfig
 import org.wikipedia.Constants
 import org.wikipedia.R
 import org.wikipedia.activity.SingleFragmentActivity
@@ -16,24 +30,8 @@ import org.wikipedia.settings.Prefs
 import org.wikipedia.util.DimenUtil
 import org.wikipedia.util.FeedbackUtil
 import org.wikipedia.util.ResourceUtil
-import android.content.BroadcastReceiver
-import android.content.IntentFilter
-import android.util.Log
-import androidx.localbroadcastmanager.content.LocalBroadcastManager
-import androidx.core.content.ContextCompat
-import org.greatfire.envoy.*
-
-import IEnvoyProxy.IEnvoyProxy
-import androidx.lifecycle.lifecycleScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
-import org.json.JSONArray
-import org.json.JSONObject
-import org.wikipedia.BuildConfig
 import java.io.BufferedReader
 import java.io.FileNotFoundException
-import java.lang.Exception
 import java.net.ConnectException
 import java.net.HttpURLConnection
 import java.net.SocketTimeoutException
@@ -131,10 +129,10 @@ class MainActivity : SingleFragmentActivity<MainFragment>(), MainFragment.Callba
     fun getDnsttMetadata() {
 
         // check for dnstt project properties
-        if (BuildConfig.DNSTT_SERVER.isNullOrEmpty()
-            || BuildConfig.DNSTT_KEY.isNullOrEmpty()
-            || BuildConfig.DNSTT_PATH.isNullOrEmpty()
-            || (BuildConfig.DOH_URL.isNullOrEmpty() && BuildConfig.DOT_ADDR.isNullOrEmpty())) {
+        if (BuildConfig.DNSTT_SERVER.isNullOrEmpty() ||
+            BuildConfig.DNSTT_KEY.isNullOrEmpty() ||
+            BuildConfig.DNSTT_PATH.isNullOrEmpty() ||
+            (BuildConfig.DOH_URL.isNullOrEmpty() && BuildConfig.DOT_ADDR.isNullOrEmpty())) {
             Log.e(TAG, "dnstt parameters are not defined, cannot fetch metadata with dnstt")
         } else {
 
@@ -142,7 +140,7 @@ class MainActivity : SingleFragmentActivity<MainFragment>(), MainFragment.Callba
             lifecycleScope.launch(Dispatchers.IO) {
                 Log.d(TAG, "start timer")
                 waitingForDnstt = true
-                delay(10000L)  // wait 10 seconds
+                delay(10000L) // wait 10 seconds
                 if (waitingForDnstt) {
                     Log.d(TAG, "stop timer, stop dnstt")
                     waitingForDnstt = false
@@ -235,10 +233,10 @@ class MainActivity : SingleFragmentActivity<MainFragment>(), MainFragment.Callba
                 shadowsocksIntent.putExtra(
                     "org.greatfire.envoy.START_SS_LOCAL",
                     ssUrlRemote
-                );
+                )
                 waitingForShadowsocks = true
                 ContextCompat.startForegroundService(applicationContext, shadowsocksIntent)
-                return;
+                return
             }
         }
 

@@ -5,6 +5,7 @@ import com.jakewharton.retrofit2.converter.kotlinx.serialization.asConverterFact
 import okhttp3.Interceptor
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.Response
+import org.greatfire.envoy.CronetInterceptor
 import org.wikipedia.WikipediaApp
 import org.wikipedia.analytics.eventplatform.DestinationEventService
 import org.wikipedia.analytics.eventplatform.EventService
@@ -16,7 +17,6 @@ import retrofit2.Retrofit
 import retrofit2.adapter.rxjava3.RxJava3CallAdapterFactory
 import retrofit2.create
 import java.io.IOException
-import org.greatfire.envoy.CronetInterceptor
 
 object ServiceFactory {
 
