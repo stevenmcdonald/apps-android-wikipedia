@@ -74,18 +74,11 @@ class MainActivity : SingleFragmentActivity<MainFragment>(), MainFragment.Callba
                     Log.d(TAG, "received " + validUrls?.size + " valid urls")
                     if (waitingForUrl) {
                         if (validUrls != null && !validUrls.isEmpty()) {
-                            if (validUrls.size == 1 && validUrls[0].startsWith("http")) {
-                                Log.d(TAG, "WAITING FOR SOCKS URL...")
-                            } else if (validUrls.size == 2 && validUrls[1].startsWith("socks")) {
-                                Log.d(TAG, "FORCE SOCKS URL...")
-                                waitingForUrl = false
-                                val envoyUrl = validUrls[1]
-                                Log.d(TAG, "found a valid url: " + envoyUrl + ", start engine")
-                                // select the fastest one (urls are ordered by latency), reInitializeIfNeeded set to false
-                                CronetNetworking.initializeCronetEngine(context, envoyUrl)
-                            } else {
-                                Log.d(TAG, "STILL WAITING...")
-                            }
+                            waitingForUrl = false
+                            val envoyUrl = validUrls[0]
+                            Log.d(TAG, "found a valid url: " + envoyUrl + ", start engine")
+                            // select the fastest one (urls are ordered by latency), reInitializeIfNeeded set to false
+                            CronetNetworking.initializeCronetEngine(context, envoyUrl)
                         } else {
                             Log.e(TAG, "received empty list of valid urls")
                         }
@@ -104,9 +97,22 @@ class MainActivity : SingleFragmentActivity<MainFragment>(), MainFragment.Callba
                     } else {
                         Log.e(TAG, "shadowsocks service failed to start")
                     }
-                    // service was started if possible, submit list of urls to envoy for evaluation
-                    waitingForUrl = true
-                    NetworkIntentService.submit(this@MainActivity, possibleUrls)
+                    // shadowsocks service was started if possible, submit list of urls to envoy for evaluation
+                    if (waitingForHysteria) {
+                        Log.d(TAG, "submit urls after an additional delay for starting hysteria")
+                        lifecycleScope.launch(Dispatchers.IO) {
+                            Log.d(TAG, "start delay")
+                            delay(5000L)  // wait 5 seconds
+                            Log.d(TAG, "end delay")
+                            waitingForHysteria = false
+                            waitingForUrl = true
+                            NetworkIntentService.submit(this@MainActivity, possibleUrls)
+                        }
+                    } else {
+                        Log.d(TAG, "submit urls, no additional delay is needed")
+                        waitingForUrl = true
+                        NetworkIntentService.submit(this@MainActivity, possibleUrls)
+                    }
                 } else {
                     Log.e(TAG, "received unexpected intent: " + intent.action)
                 }
@@ -229,7 +235,6 @@ class MainActivity : SingleFragmentActivity<MainFragment>(), MainFragment.Callba
                 hysteriaUrlRemote = envoyUrlArray.getString(i)
             } else if (envoyUrlArray.getString(i).startsWith("ss://")) {
                 Log.d(TAG, "found ss url: " + envoyUrlArray.getString(i))
-                //possibleUrls.add(ssUrlLocal)
                 ssUrlRemote = envoyUrlArray.getString(i)
             } else {
                 Log.d(TAG, "found url: " + envoyUrlArray.getString(i))
@@ -238,7 +243,9 @@ class MainActivity : SingleFragmentActivity<MainFragment>(), MainFragment.Callba
         }
 
         // TEMP - TEST HYSTERIA
-        // hysteriaUrlRemote = "172.104.163.54:32323"
+        hysteriaUrlRemote = "172.104.163.54:32323"
+
+        // check for urls that require services
 
         if (hysteriaUrlRemote.isNotEmpty()) {
             Log.d(TAG, "hysteria service needed")
@@ -283,7 +290,6 @@ class MainActivity : SingleFragmentActivity<MainFragment>(), MainFragment.Callba
             waitingForHysteria = true
         }
 
-        // check for urls that require services
         if (ssUrlRemote.isNotEmpty()) {
             // Notification.Builder in ShadowsocksService.onStartCommand may require api > 7
             Log.d(TAG, "shadowsocks service needed")
@@ -298,7 +304,6 @@ class MainActivity : SingleFragmentActivity<MainFragment>(), MainFragment.Callba
             // add url for shadowsocks service
             possibleUrls.add(ssUrlLocal)
             waitingForShadowsocks = true
-            // return;
         }
 
         if (possibleUrls.isEmpty()) {
@@ -309,8 +314,9 @@ class MainActivity : SingleFragmentActivity<MainFragment>(), MainFragment.Callba
             Log.d(TAG, "submit urls after a short delay for starting hysteria")
             lifecycleScope.launch(Dispatchers.IO) {
                 Log.d(TAG, "start delay")
-                delay(5000L)  // wait 1 second
+                delay(10000L)  // wait 10 seconds
                 Log.d(TAG, "end delay")
+                waitingForHysteria = false
                 waitingForUrl = true
                 NetworkIntentService.submit(this@MainActivity, possibleUrls)
             }
