@@ -55,13 +55,15 @@ class MainActivity : SingleFragmentActivity<MainFragment>(), MainFragment.Callba
     private val hysteriaUrlLocal = "socks5://127.0.0.1:"
     private var hysteriaUrlRemote = ""
     // add all string values to this list value
-    private val possibleUrls = mutableListOf<String>()
+    private val defaultUrls = mutableListOf<String>()
+    private val dnsttUrls = mutableListOf<String>()
 
     // TODO: revisit and refactor
     private var waitingForDnstt = false
     private var waitingForHysteria = false
     private var waitingForShadowsocks = false
-    private var waitingForUrl = false
+    private var waitingForDefaultUrl = false
+    private var waitingForDnsttUrl = false
 
     // this receiver should be triggered by a success or failure broadcast from either the
     // NetworkIntentService (indicating whether submitted urls were valid or invalid) or the
@@ -72,9 +74,11 @@ class MainActivity : SingleFragmentActivity<MainFragment>(), MainFragment.Callba
                 if (intent.action == BROADCAST_URL_VALIDATION_SUCCEEDED) {
                     val validUrls = intent.getStringArrayListExtra(EXTENDED_DATA_VALID_URLS)
                     Log.d(TAG, "received " + validUrls?.size + " valid urls")
-                    if (waitingForUrl) {
+                    if (waitingForDefaultUrl || waitingForDnsttUrl) {
                         if (validUrls != null && !validUrls.isEmpty()) {
-                            waitingForUrl = false
+                            // if we get a valid url, it doesn't matter whether it's from defaults or dnstt
+                            waitingForDefaultUrl = false
+                            waitingForDnsttUrl = false
                             val envoyUrl = validUrls[0]
                             Log.d(TAG, "found a valid url: " + envoyUrl + ", start engine")
                             // select the fastest one (urls are ordered by latency), reInitializeIfNeeded set to false
@@ -88,7 +92,24 @@ class MainActivity : SingleFragmentActivity<MainFragment>(), MainFragment.Callba
                 } else if (intent.action == BROADCAST_URL_VALIDATION_FAILED) {
                     val invalidUrls = intent.getStringArrayListExtra(EXTENDED_DATA_INVALID_URLS)
                     Log.e(TAG, "received " + invalidUrls?.size + " invalid urls")
-                    // TODO: log or show error if all possible urls were invalid?
+                    if (invalidUrls != null && !invalidUrls.isEmpty()) {
+                        if (waitingForDefaultUrl && (invalidUrls.size >= defaultUrls.size)) {
+                            Log.e(TAG, "no default urls left to try, fetch urls with dnstt")
+                            waitingForDefaultUrl = false
+                            waitingForDnsttUrl = true
+                            // start asynchronous dnstt task to fetch proxy urls
+                            lifecycleScope.launch(Dispatchers.IO) {
+                                getDnsttUrls()
+                            }
+                        } else if (waitingForDnsttUrl && (invalidUrls.size >= dnsttUrls.size)) {
+                            Log.e(TAG, "no dnstt urls left to try, cannot start envoy/cronet")
+                            waitingForDnsttUrl = false
+                        } else {
+                            Log.e(TAG, "still trying urls: default - " + waitingForDefaultUrl + ", " + defaultUrls.size + " / dnstt - " + waitingForDnsttUrl + ", " + dnsttUrls.size)
+                        }
+                    } else {
+                        Log.e(TAG, "received empty list of invalid urls")
+                    }
                 } else if (intent.action == ShadowsocksService.SHADOWSOCKS_SERVICE_BROADCAST) {
                     waitingForShadowsocks = false
                     var shadowsocksResult = intent.getIntExtra(ShadowsocksService.SHADOWSOCKS_SERVICE_RESULT, 0)
@@ -105,13 +126,19 @@ class MainActivity : SingleFragmentActivity<MainFragment>(), MainFragment.Callba
                             delay(5000L)  // wait 5 seconds
                             Log.d(TAG, "end delay")
                             waitingForHysteria = false
-                            waitingForUrl = true
-                            NetworkIntentService.submit(this@MainActivity, possibleUrls)
+                            if (waitingForDefaultUrl) {
+                                NetworkIntentService.submit(this@MainActivity, defaultUrls)
+                            } else {
+                                NetworkIntentService.submit(this@MainActivity, dnsttUrls)
+                            }
                         }
                     } else {
                         Log.d(TAG, "submit urls, no additional delay is needed")
-                        waitingForUrl = true
-                        NetworkIntentService.submit(this@MainActivity, possibleUrls)
+                        if (waitingForDefaultUrl) {
+                            NetworkIntentService.submit(this@MainActivity, defaultUrls)
+                        } else {
+                            NetworkIntentService.submit(this@MainActivity, dnsttUrls)
+                        }
                     }
                 } else {
                     Log.e(TAG, "received unexpected intent: " + intent.action)
@@ -127,24 +154,21 @@ class MainActivity : SingleFragmentActivity<MainFragment>(), MainFragment.Callba
         setContentView(binding.root)
     }
 
-    private fun envoySetup() {
+    fun getDefaultUrls() {
 
-        // immediately submit default url in case dnstt fails
+        var urlList = mutableListOf<String>()
+
         if (BuildConfig.DEF_PROXY.isNullOrEmpty()) {
-            Log.w(TAG, "no default proxy url was provided")
+            Log.w(TAG, "no default proxy urls were provided")
         } else {
-            Log.d(TAG, "submit default proxy url to envoy")
-            waitingForUrl = true
-            NetworkIntentService.submit(this, mutableListOf<String>(BuildConfig.DEF_PROXY))
+            Log.d(TAG, "found default proxy urls: " + BuildConfig.DEF_PROXY)
+            urlList.addAll(BuildConfig.DEF_PROXY.split(","))
         }
 
-        // start asynchronous dnstt task to fetch proxy urls
-        lifecycleScope.launch(Dispatchers.IO) {
-            getDnsttMetadata()
-        }
+        handleUrls(urlList)
     }
 
-    fun getDnsttMetadata() {
+    fun getDnsttUrls() {
 
         // check for dnstt project properties
         if (BuildConfig.DNSTT_SERVER.isNullOrEmpty()
@@ -203,7 +227,25 @@ class MainActivity : SingleFragmentActivity<MainFragment>(), MainFragment.Callba
                         val json = input.bufferedReader().use(BufferedReader::readText)
                         val envoyObject = JSONObject(json)
                         val envoyUrlArray = envoyObject.getJSONArray("envoyUrls")
-                        handleDnsttResults(envoyUrlArray)
+
+                        var urlList = mutableListOf<String>()
+
+                        for (i in 0 until envoyUrlArray!!.length()) {
+                            if (defaultUrls.contains(envoyUrlArray.getString(i)) ||
+                                    hysteriaUrlRemote.equals(envoyUrlArray.getString(i)) ||
+                                    ssUrlRemote.equals(envoyUrlArray.getString(i))) {
+                                Log.d(TAG, "dnstt url " + envoyUrlArray.getString(i) + " has aready been validated")
+                            } else {
+                                Log.d(TAG, "dnstt url " + envoyUrlArray.getString(i) + " has not been validated yet")
+                                urlList.add(envoyUrlArray.getString(i))
+                            }
+                        }
+
+                        hysteriaUrlRemote = ""
+                        ssUrlRemote = ""
+
+                        handleUrls(urlList)
+
                     } else {
                         Log.e(TAG, "response contained no json to parse")
                     }
@@ -226,24 +268,25 @@ class MainActivity : SingleFragmentActivity<MainFragment>(), MainFragment.Callba
         }
     }
 
-    fun handleDnsttResults(envoyUrlArray: JSONArray?) {
+    fun handleUrls(envoyUrls: MutableList<String>) {
 
-        // parse dnstt urls
-        for (i in 0 until envoyUrlArray!!.length()) {
-            if (envoyUrlArray.getString(i).startsWith("hysteria://")) {
-                Log.d(TAG, "found hysteria url")
-                hysteriaUrlRemote = envoyUrlArray.getString(i)
-            } else if (envoyUrlArray.getString(i).startsWith("ss://")) {
-                Log.d(TAG, "found ss url: " + envoyUrlArray.getString(i))
-                ssUrlRemote = envoyUrlArray.getString(i)
+        // check url types
+        for (url in envoyUrls) {
+            if (url.startsWith("hysteria://")) {
+                Log.d(TAG, "found hysteria url" + url)
+                hysteriaUrlRemote = url
+            } else if (url.startsWith("ss://")) {
+                Log.d(TAG, "found ss url: " + url)
+                ssUrlRemote = url
             } else {
-                Log.d(TAG, "found url: " + envoyUrlArray.getString(i))
-                possibleUrls.add(envoyUrlArray.getString(i))
+                Log.d(TAG, "found url: " + url)
+                if (waitingForDefaultUrl) {
+                    defaultUrls.add(url)
+                } else {
+                    dnsttUrls.add(url)
+                }
             }
         }
-
-        // TEMP - TEST HYSTERIA
-        hysteriaUrlRemote = "172.104.163.54:32323"
 
         // check for urls that require services
 
@@ -283,10 +326,15 @@ class MainActivity : SingleFragmentActivity<MainFragment>(), MainFragment.Callba
         """.trimIndent()
             )
 
-            Log.d(TAG, "hysteria service started at " + hysteriaUrlLocal + hysteriaPort + "/")
+            Log.d(TAG, "hysteria service started at " + hysteriaUrlLocal + hysteriaPort)
 
             // add url for hysteria service
-            possibleUrls.add(hysteriaUrlLocal + hysteriaPort + "/")
+            if (waitingForDefaultUrl) {
+                defaultUrls.add(hysteriaUrlLocal + hysteriaPort)
+            } else {
+                dnsttUrls.add(hysteriaUrlLocal + hysteriaPort)
+            }
+
             waitingForHysteria = true
         }
 
@@ -302,12 +350,26 @@ class MainActivity : SingleFragmentActivity<MainFragment>(), MainFragment.Callba
             )
             ContextCompat.startForegroundService(applicationContext, shadowsocksIntent)
             // add url for shadowsocks service
-            possibleUrls.add(ssUrlLocal)
+            if (waitingForDefaultUrl) {
+                defaultUrls.add(ssUrlLocal)
+            } else {
+                dnsttUrls.add(ssUrlLocal)
+            }
+
             waitingForShadowsocks = true
         }
 
-        if (possibleUrls.isEmpty()) {
-            Log.w(TAG, "no urls to submit, cannot setup envoy")
+        if (waitingForDefaultUrl && defaultUrls.isEmpty()) {
+            Log.w(TAG, "no default urls to submit, get additional urls with dnstt")
+            waitingForDefaultUrl = false
+            waitingForDnsttUrl = true
+            // start asynchronous dnstt task to fetch proxy urls
+            lifecycleScope.launch(Dispatchers.IO) {
+                getDnsttUrls()
+            }
+        } else if (waitingForDnsttUrl && dnsttUrls.isEmpty()) {
+            waitingForDnsttUrl = false
+            Log.w(TAG, "no dnstt urls to submit, cannot start envoy/cronet")
         } else if (waitingForShadowsocks) {
             Log.d(TAG, "submit urls after starting shadowsocks service")
         } else if (waitingForHysteria) {
@@ -317,14 +379,20 @@ class MainActivity : SingleFragmentActivity<MainFragment>(), MainFragment.Callba
                 delay(10000L)  // wait 10 seconds
                 Log.d(TAG, "end delay")
                 waitingForHysteria = false
-                waitingForUrl = true
-                NetworkIntentService.submit(this@MainActivity, possibleUrls)
+                if (waitingForDefaultUrl) {
+                    NetworkIntentService.submit(this@MainActivity, defaultUrls)
+                } else {
+                    NetworkIntentService.submit(this@MainActivity, dnsttUrls)
+                }
             }
         } else {
             // submit list of urls to envoy for evaluation
             Log.d(TAG, "no services needed, submit urls immediately")
-            waitingForUrl = true
-            NetworkIntentService.submit(this, possibleUrls)
+            if (waitingForDefaultUrl) {
+                NetworkIntentService.submit(this@MainActivity, defaultUrls)
+            } else {
+                NetworkIntentService.submit(this@MainActivity, dnsttUrls)
+            }
         }
     }
 
@@ -337,9 +405,6 @@ class MainActivity : SingleFragmentActivity<MainFragment>(), MainFragment.Callba
             addAction(BROADCAST_URL_VALIDATION_FAILED)
             addAction(ShadowsocksService.SHADOWSOCKS_SERVICE_BROADCAST)
         })
-
-        // run envoy setup (fetches and validate urls)
-        envoySetup()
 
         setImageZoomHelper()
         if (Prefs.isInitialOnboardingEnabled && savedInstanceState == null) {
@@ -360,6 +425,19 @@ class MainActivity : SingleFragmentActivity<MainFragment>(), MainFragment.Callba
 
     override fun onResume() {
         super.onResume()
+
+        // start cronet here to prevent exception from starting a service when out of focus
+        if (CronetNetworking.cronetEngine() != null) {
+            Log.d(TAG, "cronet already running, don't try to start again")
+        } else if (waitingForDefaultUrl || waitingForDnsttUrl) {
+            Log.d(TAG, "already processing urls, don't try to start again")
+        } else {
+            // run envoy setup (fetches and validate urls)
+            Log.d(TAG, "begin processing urls to start cronet")
+            waitingForDefaultUrl = true
+            getDefaultUrls()
+        }
+
         invalidateOptionsMenu()
     }
 
