@@ -55,6 +55,7 @@
     </queries>
 
     <application
+        android:usesCleartextTraffic="true"
         android:allowBackup="true"
         android:fullBackupContent="@xml/full_backup_rules"
         android:supportsRtl="true"
@@ -400,11 +401,15 @@
 
         <service
             android:name="org.greatfire.envoy.ShadowsocksService"
+            android:stopWithTask="false"
             android:exported="false"
             android:isolatedProcess="false" />
+            
         <service
             android:name="org.greatfire.envoy.NetworkIntentService"
-            android:exported="false" />
+            android:stopWithTask="false"
+            android:exported="false"
+            android:isolatedProcess="false" />
 
     </application>
 </manifest>

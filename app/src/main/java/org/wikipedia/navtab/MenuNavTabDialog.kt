@@ -7,6 +7,7 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.core.widget.ImageViewCompat
 import com.google.android.material.bottomsheet.BottomSheetBehavior
+import org.greatfire.envoy.CronetNetworking
 import org.wikipedia.BuildConfig
 import org.wikipedia.R
 import org.wikipedia.WikipediaApp
@@ -109,6 +110,15 @@ class MenuNavTabDialog : ExtendedBottomSheetDialogFragment() {
             binding.mainDrawerLoginOpenExternalIcon.visibility = View.GONE
             binding.mainDrawerTalkContainer.visibility = View.GONE
             binding.mainDrawerWatchlistContainer.visibility = View.GONE
+        }
+
+        // check proxy state
+        if (CronetNetworking.cronetEngine() == null) {
+            binding.mainDrawerProxyOn.visibility = View.GONE
+            binding.mainDrawerProxyOff.visibility = View.VISIBLE
+        } else {
+            binding.mainDrawerProxyOn.visibility = View.VISIBLE
+            binding.mainDrawerProxyOff.visibility = View.GONE
         }
     }
 

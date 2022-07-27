@@ -365,7 +365,7 @@ class DescriptionEditView : LinearLayout, MlKitLanguageDetector.Callback {
 
     override fun onLanguageDetectionSuccess(languageCodes: List<String>) {
         if (!languageCodes.contains(pageSummaryForEdit.lang) &&
-                !languageCodes.contains(WikipediaApp.instance.languageState.getDefaultLanguageCode(pageSummaryForEdit.lang))) {
+            !languageCodes.contains(WikipediaApp.instance.languageState.getDefaultLanguageCode(pageSummaryForEdit.lang))) {
             isLanguageWrong = true
             enqueueValidateText()
         }

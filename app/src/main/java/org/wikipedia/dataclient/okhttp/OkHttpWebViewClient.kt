@@ -84,7 +84,7 @@ abstract class OkHttpWebViewClient : WebViewClient() {
             if (header == "User-Agent") {
                 // remove override user agent from webview
                 // https://stackoverflow.com/questions/47165973/what-does-the-wv-means-on-an-user-agent-string
-                continue;
+                continue
             }
             if (header == "If-None-Match" || header == "If-Modified-Since") {
                 // Strip away conditional headers from the request coming from the WebView, since
