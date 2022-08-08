@@ -273,8 +273,12 @@ class MainActivity : SingleFragmentActivity<MainFragment>(), MainFragment.Callba
         // check url types
         for (url in envoyUrls) {
             if (url.startsWith("hysteria://")) {
-                Log.d(TAG, "found hysteria url" + url)
-                hysteriaUrlRemote = url
+
+                // TEMP: current hysteria host uses an ip not a url
+                var shortUrl = url.replace("hysteria://", "")
+
+                Log.d(TAG, "found hysteria url: " + shortUrl)
+                hysteriaUrlRemote = shortUrl
             } else if (url.startsWith("ss://")) {
                 Log.d(TAG, "found ss url: " + url)
                 ssUrlRemote = url
