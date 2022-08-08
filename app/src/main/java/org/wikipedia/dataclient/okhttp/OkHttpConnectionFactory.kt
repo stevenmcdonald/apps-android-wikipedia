@@ -4,12 +4,12 @@ import okhttp3.Cache
 import okhttp3.CacheControl
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
+import org.greatfire.envoy.CronetInterceptor
 import org.wikipedia.WikipediaApp
 import org.wikipedia.dataclient.SharedPreferenceCookieManager
 import org.wikipedia.settings.Prefs
 import java.io.File
 import java.util.concurrent.TimeUnit
-import org.greatfire.envoy.CronetInterceptor
 
 object OkHttpConnectionFactory {
     val CACHE_CONTROL_FORCE_NETWORK = CacheControl.Builder().maxAge(0, TimeUnit.SECONDS).build()
