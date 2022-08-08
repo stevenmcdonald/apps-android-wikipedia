@@ -17,7 +17,6 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import org.greatfire.envoy.*
-import org.json.JSONArray
 import org.json.JSONObject
 import org.wikipedia.BuildConfig
 import org.wikipedia.Constants
@@ -121,7 +120,7 @@ class MainActivity : SingleFragmentActivity<MainFragment>(), MainFragment.Callba
                         Log.d(TAG, "submit urls after an additional delay for starting hysteria")
                         lifecycleScope.launch(Dispatchers.IO) {
                             Log.d(TAG, "start delay")
-                            delay(5000L)  // wait 5 seconds
+                            delay(5000L) // wait 5 seconds
                             Log.d(TAG, "end delay")
                             waitingForHysteria = false
                             if (waitingForDefaultUrl) {
@@ -243,7 +242,6 @@ class MainActivity : SingleFragmentActivity<MainFragment>(), MainFragment.Callba
                         ssUrlRemote = ""
 
                         handleUrls(urlList)
-
                     } else {
                         Log.e(TAG, "response contained no json to parse")
                     }
@@ -378,7 +376,7 @@ class MainActivity : SingleFragmentActivity<MainFragment>(), MainFragment.Callba
             Log.d(TAG, "submit urls after a short delay for starting hysteria")
             lifecycleScope.launch(Dispatchers.IO) {
                 Log.d(TAG, "start delay")
-                delay(10000L)  // wait 10 seconds
+                delay(10000L) // wait 10 seconds
                 Log.d(TAG, "end delay")
                 waitingForHysteria = false
                 if (waitingForDefaultUrl) {
