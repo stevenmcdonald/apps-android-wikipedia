@@ -47,16 +47,19 @@ class MainActivity : SingleFragmentActivity<MainFragment>(), MainFragment.Callba
     // initialize one or more string values containing the urls of available http/https proxies (include trailing slash)
     // -> now parsing urls from dnstt request
     // urls for additional proxy services, change if there are port conflicts (do not include trailing slash)
-    private val ssUrlLocal = "socks5://127.0.0.1:1080"
     private var ssUrlRemote = ""
-    private val hysteriaUrlLocal = "socks5://127.0.0.1:"
     private var hysteriaUrlRemote = ""
+    private var v2wsUrlRemote = ""
+    private var v2srtpUrlRemote = ""
+    private var v2wechatUrlRemote = ""
+    private val baseUrlLocal = "socks5://127.0.0.1:"
     // add all string values to this list value
     private val defaultUrls = mutableListOf<String>()
     private val dnsttUrls = mutableListOf<String>()
 
     // TODO: revisit and refactor
     private var waitingForDnstt = false
+    private var waitingForV2ray = false
     private var waitingForHysteria = false
     private var waitingForShadowsocks = false
     private var waitingForDefaultUrl = false
@@ -116,13 +119,14 @@ class MainActivity : SingleFragmentActivity<MainFragment>(), MainFragment.Callba
                         Log.e(TAG, "shadowsocks service failed to start")
                     }
                     // shadowsocks service was started if possible, submit list of urls to envoy for evaluation
-                    if (waitingForHysteria) {
-                        Log.d(TAG, "submit urls after an additional delay for starting hysteria")
+                    if (waitingForHysteria || waitingForV2ray) {
+                        Log.d(TAG, "submit urls after an additional delay for starting hysteria and/or v2ray")
                         lifecycleScope.launch(Dispatchers.IO) {
                             Log.d(TAG, "start delay")
                             delay(5000L) // wait 5 seconds
                             Log.d(TAG, "end delay")
                             waitingForHysteria = false
+                            waitingForV2ray = false
                             if (waitingForDefaultUrl) {
                                 NetworkIntentService.submit(this@MainActivity, defaultUrls)
                             } else {
@@ -268,13 +272,34 @@ class MainActivity : SingleFragmentActivity<MainFragment>(), MainFragment.Callba
 
         // check url types
         for (url in envoyUrls) {
-            if (url.startsWith("hysteria://")) {
+            if (url.startsWith("v2ws://")) {
+
+                // TEMP: current v2ray host uses an ip not a url
+                var shortV2wsUrl = url.replace("v2ws://", "")
+
+                Log.d(TAG, "found v2ray url: " + shortV2wsUrl)
+                v2wsUrlRemote = shortV2wsUrl
+            } else if (url.startsWith("v2srtp://")) {
+
+                // TEMP: current v2ray host uses an ip not a url
+                var shortV2srtpUrl = url.replace("v2srtp://", "")
+
+                Log.d(TAG, "found v2ray url: " + shortV2srtpUrl)
+                v2srtpUrlRemote = shortV2srtpUrl
+            } else if (url.startsWith("v2wechat://")) {
+
+                // TEMP: current v2ray host uses an ip not a url
+                var shortV2wechatUrl = url.replace("v2wechat://", "")
+
+                Log.d(TAG, "found v2ray url: " + shortV2wechatUrl)
+                v2wechatUrlRemote = shortV2wechatUrl
+            } else if (url.startsWith("hysteria://")) {
 
                 // TEMP: current hysteria host uses an ip not a url
-                var shortUrl = url.replace("hysteria://", "")
+                var shortHysteriaUrl = url.replace("hysteria://", "")
 
-                Log.d(TAG, "found hysteria url: " + shortUrl)
-                hysteriaUrlRemote = shortUrl
+                Log.d(TAG, "found hysteria url: " + shortHysteriaUrl)
+                hysteriaUrlRemote = shortHysteriaUrl
             } else if (url.startsWith("ss://")) {
                 Log.d(TAG, "found ss url: " + url)
                 ssUrlRemote = url
@@ -289,6 +314,72 @@ class MainActivity : SingleFragmentActivity<MainFragment>(), MainFragment.Callba
         }
 
         // check for urls that require services
+
+        if (v2wsUrlRemote.isNotEmpty()) {
+            Log.d(TAG, "v2ray websocket service needed")
+            // start v2ray websocket service
+            val v2wsParts = v2wsUrlRemote.split(":")
+            if (v2wsParts == null || v2wsParts.size < 4) {
+                Log.e(TAG, "some arguments required for v2ray websocket service are missing")
+            } else {
+                val v2wsPort = IEnvoyProxy.startV2RayWs(v2wsParts[0], v2wsParts[1], v2wsParts[2], v2wsParts[3])
+
+                Log.d(TAG, "v2ray websocket service started at " + baseUrlLocal + v2wsPort)
+
+                // add url for v2ray service
+                if (waitingForDefaultUrl) {
+                    defaultUrls.add(baseUrlLocal + v2wsPort)
+                } else {
+                    dnsttUrls.add(baseUrlLocal + v2wsPort)
+                }
+
+                waitingForV2ray = true
+            }
+        }
+
+        if (v2srtpUrlRemote.isNotEmpty()) {
+            Log.d(TAG, "v2ray srtp service needed")
+            // start v2ray srtp service
+            val v2srtpParts = v2srtpUrlRemote.split(":")
+            if (v2srtpParts == null || v2srtpParts.size < 3) {
+                Log.e(TAG, "some arguments required for v2ray srtp service are missing")
+            } else {
+                val v2srtpPort = IEnvoyProxy.startV2raySrtp(v2srtpParts[0], v2srtpParts[1], v2srtpParts[2])
+
+                Log.d(TAG, "v2ray srtp service started at " + baseUrlLocal + v2srtpPort)
+
+                // add url for v2ray service
+                if (waitingForDefaultUrl) {
+                    defaultUrls.add(baseUrlLocal + v2srtpPort)
+                } else {
+                    dnsttUrls.add(baseUrlLocal + v2srtpPort)
+                }
+
+                waitingForV2ray = true
+            }
+        }
+
+        if (v2wechatUrlRemote.isNotEmpty()) {
+            Log.d(TAG, "v2ray wechat service needed")
+            // start v2ray wechat service
+            val v2wechatParts = v2wechatUrlRemote.split(":")
+            if (v2wechatParts == null || v2wechatParts.size < 3) {
+                Log.e(TAG, "some arguments required for v2ray wechat service are missing")
+            } else {
+                val v2wechatPort = IEnvoyProxy.startV2raySrtp(v2wechatParts[0], v2wechatParts[1], v2wechatParts[2])
+
+                Log.d(TAG, "v2ray wechat service started at " + baseUrlLocal + v2wechatPort)
+
+                // add url for v2ray service
+                if (waitingForDefaultUrl) {
+                    defaultUrls.add(baseUrlLocal + v2wechatPort)
+                } else {
+                    dnsttUrls.add(baseUrlLocal + v2wechatPort)
+                }
+
+                waitingForV2ray = true
+            }
+        }
 
         if (hysteriaUrlRemote.isNotEmpty()) {
             Log.d(TAG, "hysteria service needed")
@@ -326,13 +417,13 @@ class MainActivity : SingleFragmentActivity<MainFragment>(), MainFragment.Callba
         """.trimIndent()
             )
 
-            Log.d(TAG, "hysteria service started at " + hysteriaUrlLocal + hysteriaPort)
+            Log.d(TAG, "hysteria service started at " + baseUrlLocal + hysteriaPort)
 
             // add url for hysteria service
             if (waitingForDefaultUrl) {
-                defaultUrls.add(hysteriaUrlLocal + hysteriaPort)
+                defaultUrls.add(baseUrlLocal + hysteriaPort)
             } else {
-                dnsttUrls.add(hysteriaUrlLocal + hysteriaPort)
+                dnsttUrls.add(baseUrlLocal + hysteriaPort)
             }
 
             waitingForHysteria = true
@@ -348,12 +439,15 @@ class MainActivity : SingleFragmentActivity<MainFragment>(), MainFragment.Callba
                 "org.greatfire.envoy.START_SS_LOCAL",
                 ssUrlRemote
             )
+
+            Log.d(TAG, "shadowsocks service starting at " + baseUrlLocal + "1080")
             ContextCompat.startForegroundService(applicationContext, shadowsocksIntent)
+
             // add url for shadowsocks service
             if (waitingForDefaultUrl) {
-                defaultUrls.add(ssUrlLocal)
+                defaultUrls.add(baseUrlLocal + "1080")
             } else {
-                dnsttUrls.add(ssUrlLocal)
+                dnsttUrls.add(baseUrlLocal + "1080")
             }
 
             waitingForShadowsocks = true
@@ -372,13 +466,15 @@ class MainActivity : SingleFragmentActivity<MainFragment>(), MainFragment.Callba
             Log.w(TAG, "no dnstt urls to submit, cannot start envoy/cronet")
         } else if (waitingForShadowsocks) {
             Log.d(TAG, "submit urls after starting shadowsocks service")
-        } else if (waitingForHysteria) {
-            Log.d(TAG, "submit urls after a short delay for starting hysteria")
+        } else if (waitingForHysteria || waitingForV2ray) {
+            Log.d(TAG, "submit urls after a short delay for starting hysteria and/or v2ray")
             lifecycleScope.launch(Dispatchers.IO) {
                 Log.d(TAG, "start delay")
                 delay(10000L) // wait 10 seconds
                 Log.d(TAG, "end delay")
+                // clear both flags
                 waitingForHysteria = false
+                waitingForV2ray = false
                 if (waitingForDefaultUrl) {
                     NetworkIntentService.submit(this@MainActivity, defaultUrls)
                 } else {
