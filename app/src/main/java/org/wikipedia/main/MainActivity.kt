@@ -366,7 +366,7 @@ class MainActivity : SingleFragmentActivity<MainFragment>(), MainFragment.Callba
             if (v2wechatParts == null || v2wechatParts.size < 3) {
                 Log.e(TAG, "some arguments required for v2ray wechat service are missing")
             } else {
-                val v2wechatPort = IEnvoyProxy.startV2raySrtp(v2wechatParts[0], v2wechatParts[1], v2wechatParts[2])
+                val v2wechatPort = IEnvoyProxy.startV2RayWechat(v2wechatParts[0], v2wechatParts[1], v2wechatParts[2])
 
                 Log.d(TAG, "v2ray wechat service started at " + baseUrlLocal + v2wechatPort)
 
