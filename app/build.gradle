@@ -152,6 +152,9 @@ android {
         prod {
             setSigningConfigKey(prod, PROD_PROPS)
         }
+        release {
+            setSigningConfigKey(release, PROD_PROPS)
+        }
         debug {
             setSigningConfigKey(debug, REPO_PROPS)
         }
@@ -344,7 +347,7 @@ dependencies {
     // use maven dependencies for release builds to support automation
     releaseImplementation 'org.greatfire.envoy:cronet:102.0.5005.41'
     releaseImplementation 'org.greatfire:envoy:102.0.5005.41'
-    releaseImplementation 'org.greatfire:IEnvoyProxy:1.0.2'
+    releaseImplementation 'org.greatfire:IEnvoyProxy:1.2.0'
 }
 
 /*
