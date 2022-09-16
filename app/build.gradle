@@ -14,11 +14,6 @@ apply plugin: 'kotlin-kapt'
 // final Properties PROD_PROPS = loadProperties(PROD_PROPS_FILE)
 // final Properties REPO_PROPS = loadProperties(REPO_PROPS_FILE)
 
-def dnsttServerProp = ""
-def dnsttKeyProp = ""
-def dnsttPathProp = ""
-def dohUrlProp = ""
-def dotAddrProp = ""
 def defProxyProp = ""
 
 def static getDate() {
@@ -35,36 +30,6 @@ def computeVersionName(label) {
 final JavaVersion JAVA_VERSION = JavaVersion.VERSION_1_8
 
 android {
-
-    if (project.hasProperty("dnsttserver")) {
-        dnsttServerProp = dnsttserver
-    } else {
-        println "WARNING: no dnsttserver prop found"
-    }
-
-    if (project.hasProperty("dnsttkey")) {
-        dnsttKeyProp = dnsttkey
-    } else {
-        println "WARNING: no dnsttkey prop found"
-    }
-
-    if (project.hasProperty("dnsttpath")) {
-        dnsttPathProp = dnsttpath
-    } else {
-        println "WARNING: no dnsttpath prop found"
-    }
-
-    if (project.hasProperty("dohUrl")) {
-        dohUrlProp = dohUrl
-    } else {
-        println "WARNING: no dohUrl prop found"
-    }
-
-    if (project.hasProperty("dotAddr")) {
-        dotAddrProp = dotAddr
-    } else {
-        println "WARNING: no dotAddr prop found"
-    }
 
     if (project.hasProperty("defProxy")) {
         defProxyProp = defProxy
@@ -109,11 +74,6 @@ android {
         buildConfigField "String", "EVENTGATE_ANALYTICS_EXTERNAL_BASE_URI", '"https://intake-analytics.wikimedia.org"'
         buildConfigField "String", "EVENTGATE_LOGGING_EXTERNAL_BASE_URI", '"https://intake-logging.wikimedia.org"'
 
-        buildConfigField "String", "DNSTT_SERVER", "\"$dnsttServerProp\""
-        buildConfigField "String", "DNSTT_KEY", "\"$dnsttKeyProp\""
-        buildConfigField "String", "DNSTT_PATH", "\"$dnsttPathProp\""
-        buildConfigField "String", "DOH_URL", "\"$dohUrlProp\""
-        buildConfigField "String", "DOT_ADDR", "\"$dotAddrProp\""
         buildConfigField "String", "DEF_PROXY", "\"$defProxyProp\""
 
         packagingOptions {
@@ -343,11 +303,9 @@ dependencies {
     // use local files for debug builds to support development
     debugImplementation files('libs/cronet-debug.aar')
     debugImplementation files('libs/envoy-debug.aar')
-    debugImplementation files('libs/IEnvoyProxy.aar')
     // use maven dependencies for release builds to support automation
     releaseImplementation 'org.greatfire.envoy:cronet:102.0.5005.41'
     releaseImplementation 'org.greatfire:envoy:102.0.5005.41'
-    releaseImplementation 'org.greatfire:IEnvoyProxy:1.2.0'
 }
 
 /*
