@@ -11,6 +11,7 @@
 * Envlh
 * Green Zero
 * Gzhegozh
+* Ice bulldog
 * Ihor.Zinchenko
 * Movses
 * Piramidion
@@ -20,6 +21,7 @@
 * Vlad5250
 * Vlnt
 * Ата
+* Пан Хаунд
 -->
 <resources>
   <string name="app_name_prod">Вікіпедія</string>
@@ -64,6 +66,12 @@
   <string name="share_via">Поділитися через</string>
   <string name="image_share_via">Поділитися через</string>
   <string name="search_redirect_from">Перенаправлено з %s</string>
+  <string name="page_edit_history_activity_title">Історія ревізії: %s</string>
+  <string name="page_edit_history_minor_edit">&lt;b&gt;m&lt;/b&gt; %s</string>
+  <string name="page_edit_history_comment_placeholder">Порожній підсумок редагувань</string>
+  <string name="page_edit_history_filter_by">Фільтрувати за</string>
+  <string name="page_edit_history_filter_by_anon">Одночасні зміни ( %s )</string>
+  <string name="page_edit_history_filter_by_bot">Редагування бота (%s)</string>
   <string name="menu_page_show_tabs">Показати вкладки</string>
   <string name="menu_page_other_languages">Змінити мову</string>
   <string name="menu_page_find_in_page">Знайти у статті</string>
@@ -216,7 +224,6 @@
   <string name="page_protected_can_not_edit_title">Цю сторінку захищено</string>
   <string name="page_watchlist_overflow_menu_onboarding_tooltip_title">Додати до списку спостереження</string>
   <string name="page_watchlist_overflow_menu_onboarding_tooltip_text">Слідкуйте за тим, що відбувається з цікавими вам статтями. Натисніть на значок меню і виберіть &lt;b&gt;Додати до списку спостереження&lt;/b&gt;, щоб бачити зміни до статті.</string>
-  <string name="page_notification_tooltip">Ваші сповіщення тепер тут.</string>
   <string name="settings_item_preferences">Налаштування</string>
   <string name="settings_activity_title">Налаштування</string>
   <string name="about_description">Про додаток Вікіпедії</string>
@@ -253,6 +260,7 @@
   <string name="edit_preview">Попередній перегляд</string>
   <string name="edit_undo">Скасувати</string>
   <string name="edit_redo">Повторити</string>
+  <string name="edit_rollback">Відкіт</string>
   <string name="edit_zoom_in">Збільшити</string>
   <string name="edit_zoom_out">Зменшити</string>
   <string name="edit_summary_tag_typo">Виправлена описка</string>
@@ -400,7 +408,6 @@
   <string name="error_blocked_expiry">Кінець блокування: %s</string>
   <string name="error_blocked_id">Ідентифікатор блокування: %s</string>
   <string name="error_blocked_footer">Ви можете зв\'язатися із &lt;a href=\"%2$s\"&gt;%1$s&lt;/a&gt; або іншим &lt;a href=\"https://uk.wikipedia.org/wiki/Вікіпедія:Адміністратори\"&gt;адміністратором&lt;/a&gt; й обговорити блокування.</string>
-  <string name="theme_chooser_menu_item_tooltip">Налаштуйте панель інструментів і спробуйте читати режим фокусування</string>
   <string name="error_blocked_footer_no_blocker">Ви можете зв\'язатися з &lt;a href=\"https://uk.wikipedia.org/wiki/Вікіпедія:Адміністратори\"&gt;адміністратором&lt;/a&gt; й обговорити блокування.</string>
   <string name="crash_report_activity_title">Помилка програми</string>
   <string name="crash_report_relaunch_or_quit">Перепрошуємо, у додатку Вікіпедії сталася помилка і його було закрито.\n\nХочете почати спочатку чи вийти?</string>
@@ -430,8 +437,6 @@
   <string name="theme_category_reading">Читання</string>
   <string name="reading_focus_mode">Режим фокусування читання</string>
   <string name="reading_focus_mode_detail">Приховує функції редагування та нижню панель інструментів під час прокручування</string>
-  <string name="theme_category_toolbar">Панель інструменту</string>
-  <string name="theme_customize_toolbar">Налаштувати панель інструменту</string>
   <string name="nav_item_saved">Збережено</string>
   <string name="reading_list_save_to">Зберегти до списку для читання</string>
   <string name="reading_list_move_to">Перенести до читального списку</string>
@@ -829,7 +834,6 @@
   <string name="description_edit_tutorial_button_label_start_editing">Почати редагування</string>
   <string name="description_edit_tutorial_promise">Починаючи, я обіцяю не зловживати цією функцією.</string>
   <string name="customize_toolbar_title">Налаштувати панель інструменту</string>
-  <string name="customize_toolbar_description">Налаштуйте нижню панель інструментів навігації за допомогою дій і місць призначення, які ви вважаєте найбільш корисними.</string>
   <string name="customize_toolbar_category_toolbar">Панель інструменту</string>
   <string name="customize_toolbar_category_menu">Меню</string>
   <string name="customize_toolbar_drag_and_drop_placeholder">Перетягніть сюди улюблені предмети 👋</string>
@@ -1141,6 +1145,9 @@
   <string name="talk_overflow_sort_by">Сортувати за</string>
   <string name="talk_overflow_sort_date_published">Дата публікації</string>
   <string name="talk_overflow_sort_topic_name">Назва теми</string>
+  <string name="talk_list_item_swipe_mark_as_read">Читати</string>
+  <string name="talk_list_item_swipe_mark_as_unread">Непрочитане</string>
+  <string name="talk_footer_about_this_talk_page">Про цю сторінку обговорення</string>
   <string name="menu_option_share_talk_discussion">Поділіться обговоренням</string>
   <string name="menu_option_share_talk_page">Поділіться сторінкою обговорення</string>
   <string name="menu_option_share_edit">Поділитися редагуванням</string>

@@ -5,6 +5,7 @@ import com.jakewharton.retrofit2.converter.kotlinx.serialization.asConverterFact
 import okhttp3.Interceptor
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.Response
+import org.greatfire.envoy.CronetInterceptor
 import org.wikipedia.WikipediaApp
 import org.wikipedia.analytics.eventplatform.DestinationEventService
 import org.wikipedia.analytics.eventplatform.EventService
@@ -16,7 +17,6 @@ import retrofit2.Retrofit
 import retrofit2.adapter.rxjava3.RxJava3CallAdapterFactory
 import retrofit2.create
 import java.io.IOException
-import org.greatfire.envoy.CronetInterceptor
 
 object ServiceFactory {
 
@@ -40,7 +40,6 @@ object ServiceFactory {
         createRetrofit(null, intakeBaseUriOverride).create<EventService>()
     })
 
-    @JvmStatic
     fun get(wiki: WikiSite): Service {
         return SERVICE_CACHE[wiki]!!
     }
@@ -53,7 +52,6 @@ object ServiceFactory {
         return CORE_REST_SERVICE_CACHE[wiki]!!
     }
 
-    @JvmStatic
     fun getAnalyticsRest(streamConfig: StreamConfig): EventService {
         return ANALYTICS_REST_SERVICE_CACHE[streamConfig.destinationEventService]!!
     }
@@ -98,7 +96,7 @@ object ServiceFactory {
             // TODO: remove when the https://phabricator.wikimedia.org/T271145 is resolved.
             if (!request.url.encodedPath.contains("/page/related")) {
                 request = request.newBuilder()
-                    .header("Accept-Language", WikipediaApp.getInstance().getAcceptLanguage(wiki))
+                    .header("Accept-Language", WikipediaApp.instance.getAcceptLanguage(wiki))
                     .build()
             }
             return chain.proceed(request)

@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
-    package="org.wikipedia"
     android:installLocation="auto"
     tools:node="strict">
     <!--
@@ -13,7 +12,8 @@
     -->
 
     <uses-permission android:name="android.permission.INTERNET" />
-    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" tools:node="replace" />
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"
+        tools:ignore="ScopedStorage" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
 
@@ -33,7 +33,7 @@
     <!-- For being able to receive notifications upon boot -->
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
 
-    <uses-feature android:name="android.hardware.wifi" tools:node="replace" android:required="false"  />
+    <uses-feature android:name="android.hardware.wifi" android:required="false"  />
 
     <!-- For keeping the device awake while performing background tasks, such as syncing offline articles. -->
     <uses-permission android:name="android.permission.WAKE_LOCK" />
@@ -49,9 +49,13 @@
             <action android:name="android.intent.action.VIEW" />
             <data android:scheme="https" />
         </intent>
+        <intent>
+            <action android:name="android.speech.action.RECOGNIZE_SPEECH" />
+        </intent>
     </queries>
 
     <application
+        android:usesCleartextTraffic="true"
         android:allowBackup="true"
         android:fullBackupContent="@xml/full_backup_rules"
         android:supportsRtl="true"
@@ -69,6 +73,9 @@
         Set "value" to "Google Play" for Google Play Store.
         -->
         <meta-data android:name="@string/preference_key_app_channel" android:value="@string/channel" />
+
+        <!-- Opt out of metrics collection for the System WebView. -->
+        <meta-data android:name="android.webkit.WebView.MetricsOptOut" android:value="true" />
 
         <activity
             android:name=".main.MainActivity"
@@ -196,12 +203,12 @@
             android:name=".search.SearchActivity"
             android:windowSoftInputMode="adjustResize"
             android:exported="true">
-            <intent-filter android:label="@string/intent_share_search_label">
+            <intent-filter android:label="@string/search_hint">
                 <action android:name="android.intent.action.SEND" />
                 <category android:name="android.intent.category.DEFAULT" />
                 <data android:mimeType="text/plain" />
             </intent-filter>
-            <intent-filter android:label="@string/intent_share_search_label">
+            <intent-filter android:label="@string/search_hint">
                 <action android:name="android.intent.action.PROCESS_TEXT" />
                 <category android:name="android.intent.category.DEFAULT" />
                 <data android:mimeType="text/plain" />
@@ -251,6 +258,10 @@
             android:label="@string/tabs_activity_title"
             android:theme="@style/AppTheme" />
 
+        <activity
+            android:name=".categories.CategoryActivity"
+            android:theme="@style/AppTheme.ActionBar" />
+
         <activity android:name=".suggestededits.SuggestedEditsImageTagsOnboardingActivity" />
 
         <activity
@@ -286,9 +297,13 @@
             android:name=".talk.TalkTopicActivity" />
 
         <activity
-            android:name=".diff.ArticleEditDetailsActivity"
-            android:label=""
-            android:theme="@style/AppTheme.ActionBar"  />
+            android:name=".talk.TalkReplyActivity" />
+
+        <activity
+            android:name=".talk.ArchivedTalkPagesActivity" />
+
+        <activity
+            android:name=".diff.ArticleEditDetailsActivity" />
 
         <activity
             android:name=".page.customize.CustomizeToolbarActivity"
@@ -300,6 +315,10 @@
             android:label="@string/notifications_filter_label"
             android:theme="@style/AppTheme.ActionBar"
             android:configChanges="orientation|keyboardHidden|keyboard|screenSize" />
+
+        <activity
+            android:name=".page.edithistory.EditHistoryListActivity"
+            android:theme="@style/AppTheme" />
 
         <provider
             android:name="androidx.core.content.FileProvider"
@@ -382,11 +401,15 @@
 
         <service
             android:name="org.greatfire.envoy.ShadowsocksService"
+            android:stopWithTask="false"
             android:exported="false"
             android:isolatedProcess="false" />
+            
         <service
             android:name="org.greatfire.envoy.NetworkIntentService"
-            android:exported="false" />
+            android:stopWithTask="false"
+            android:exported="false"
+            android:isolatedProcess="false" />
 
     </application>
 </manifest>

@@ -4,10 +4,12 @@
 * Aboulouei1
 * Alaa
 * Asaifm
+* Asma
 * Dbrant
 * Dr. Mohammed
 * Elbasyouny
 * Esraa Ismail
+* FiberAhmed
 * Haytham morsy
 * Helmoony
 * Hhaboh162002
@@ -23,12 +25,14 @@
 * Mr. Ibrahem
 * MuratTheTurkish
 * NEHAOUA
+* NancyMilad
 * PhiberOptik
 * Shbib Al-Subaie
 * Sonic N800
 * Tala Ali
 * Ulhvulgv
 * Youssef
+* أَحمد
 * بدارين
 * ديفيد
 * عبد الإله صديقي
@@ -50,7 +54,7 @@
   <string name="nav_item_suggested_edits">التعديلات</string>
   <string name="nav_item_more">المزيد</string>
   <string name="nav_item_search">بحث</string>
-  <string name="error_network_error">لا يوجد اتصال بالإنترنت.</string>
+  <string name="error_network_error">لا يُمكن الاتصال بالإنترنت.</string>
   <string name="page_error_retry">إعادة المحاولة</string>
   <string name="card_offline_error_retry">إعادة المحاولة</string>
   <string name="storage_access_error_retry">إعادة المحاولة</string>
@@ -78,13 +82,27 @@
   <string name="share_via">مشاركة عبر</string>
   <string name="image_share_via">مشاركة عبر</string>
   <string name="search_redirect_from">بالتحويل من %s</string>
+  <string name="page_edit_history_activity_title">تاريخ مراجعة: %s</string>
+  <string name="page_edit_history_minor_edit">&lt;b&gt;ط&lt;/b&gt; %s</string>
+  <string name="page_edit_history_comment_placeholder">ملخص محرر فارغ</string>
+  <string name="page_edit_history_search_or_filter_edits_hint">ابحث في التعديلات أو افرزها</string>
+  <string name="page_edit_history_filter_by">الفرز حسب</string>
+  <string name="page_edit_history_filter_by_all">جميع التعديلات (%s)</string>
+  <string name="page_edit_history_filter_by_user">تعديلات المستخدمين (%s)</string>
+  <string name="page_edit_history_filter_by_anon">تعديلات المجهولين (%s)</string>
+  <string name="page_edit_history_filter_by_bot">تعديلات البوتات (%s)</string>
   <string name="menu_page_show_tabs">أظهر التبويبات</string>
   <string name="menu_page_other_languages">غير اللغة</string>
   <string name="menu_page_find_in_page">ابحث في المقالة</string>
   <string name="menu_page_add_to_watchlist">أضف لقائمة المراقبة</string>
+  <string name="menu_page_watch">راقب</string>
+  <string name="menu_page_unwatch">لا تراقب</string>
   <string name="menu_page_view_talk">اعرض صفحة النقاش</string>
+  <string name="menu_page_talk_page">صفحة النقاش</string>
   <string name="menu_page_view_edit_history">اعرض تاريخ التعديلات</string>
+  <string name="menu_page_edit_history">تاريخ التعديل</string>
   <string name="menu_page_remove_from_watchlist">أزل من قائمة المراقبة</string>
+  <string name="menu_page_watched">مُراقبَة</string>
   <string name="edit_section_find_in_page">البحث في الصفحة</string>
   <string name="menu_page_font_and_theme">الخط والمظهر</string>
   <string name="menu_page_add_to_list">أضف إلى قائمة القراءة</string>
@@ -93,7 +111,8 @@
   <string name="feed_card_add_to_default_list">احفظ</string>
   <string name="menu_page_share">شارك الوصلة</string>
   <string name="menu_article_share">شارك المقالة</string>
-  <string name="menu_page_open_a_new_tab">افتح تبويبا جديدًا</string>
+  <string name="menu_page_article_share">شارك</string>
+  <string name="menu_page_open_a_new_tab">افتح تبويبًا جديدًا</string>
   <string name="menu_page_new_tab">تبويب جديد</string>
   <string name="menu_page_reading_lists">قوائم القراءة</string>
   <string name="menu_page_recently_viewed">طالعتها مؤخرًا</string>
@@ -103,7 +122,8 @@
   <string name="menu_text_select_define">عرّف</string>
   <string name="on_this_day_page_share">شارك</string>
   <string name="reading_list_page_share">شارك</string>
-  <string name="menu_text_select_edit_here">عدل هنا</string>
+  <string name="menu_text_select_edit_here">عدّل هنا</string>
+  <string name="menu_edit_article">عدل المقالة</string>
   <string name="last_updated_text">آخر تحديث %s</string>
   <string name="talk_page_link_text">اعرض صفحة النقاش</string>
   <string name="edit_history_link_text">اعرض تاريخ الصفحة</string>
@@ -179,6 +199,7 @@
   <string name="dialog_create_account_checking_progress">جارٍ التحقق…</string>
   <string name="create_account_email_hint">البريد الإلكتروني (اختياري)</string>
   <string name="create_account_password_repeat_hint">أعد كلمة السر</string>
+  <string name="create_account_password_is_username">لا يمكن أن تكون كلمة المرور هي نفس اسم المستخدم</string>
   <string name="create_account_passwords_mismatch_error">كلمتا السر لا تتطابقان</string>
   <string name="create_account_email_error">عنوان البريد الإلكتروني غير صحيح</string>
   <string name="create_account_username_error">أحرف غير صالحة في اسم المستخدم</string>
@@ -225,7 +246,6 @@
   <string name="page_protected_can_not_edit_title">هذه الصفحة محمية</string>
   <string name="page_watchlist_overflow_menu_onboarding_tooltip_title">أضف لقائمة المراقبة</string>
   <string name="page_watchlist_overflow_menu_onboarding_tooltip_text">كن على اطلاع بما يحدث على المقالات التي تهمك. اضغط على قائمة الخيارات واختر &lt;b&gt;أضف لقائمة المراقبة&lt;/b&gt; لرؤية التغييرات على المقالة.</string>
-  <string name="page_notification_tooltip">إشعاراتك موجودة هنا الآن.</string>
   <string name="settings_item_preferences">الإعدادات</string>
   <string name="settings_activity_title">الإعدادات</string>
   <string name="about_description">حول تطبيق ويكيبيديا</string>
@@ -406,6 +426,7 @@
   <string name="empty_tab_title">تبويب جديد</string>
   <string name="menu_save_all_tabs">حفظ كل الألسنة</string>
   <string name="error_blocked_title">عنوان الآي بي أو اسم المستخدم الخاص بك تم منعه.</string>
+  <string name="error_blocked_reason">السبب المُعطى هو: %s</string>
   <string name="crash_report_activity_title">عطل في التطبيق</string>
   <string name="crash_report_relaunch_or_quit">نحن آسفون، وقع خطأ في تطبيق ويكيبيديا أدى إلى توقفه.\n\nتريد أن تبدأ من جديد أو إنهاء؟</string>
   <string name="crash_report_relaunch">ابدأ من جديد</string>
@@ -434,8 +455,6 @@
   <string name="theme_category_reading">القراءة</string>
   <string name="reading_focus_mode">وضع تركيز القراءة</string>
   <string name="reading_focus_mode_detail">أخف ميزات التعديل وشريط الأدوات السفلي أثناء التمرير</string>
-  <string name="theme_category_toolbar">شريط الأدوات</string>
-  <string name="theme_customize_toolbar">تخصيص شريط الأدوات</string>
   <string name="nav_item_saved">محفوظة</string>
   <string name="reading_list_save_to">حفظ في قائمة القراءة</string>
   <string name="reading_list_move_to">انتقل إلى قائمة القراءة</string>
@@ -628,6 +647,8 @@
   <string name="notifications_view_archived_button_text">عرض الإشعارات المؤرشفة</string>
   <string name="notification_preferences_title">تفضيلات الإشعارات</string>
   <string name="notifications_mark_unread">علم كغير مقروءة</string>
+  <string name="notifications_mark_all_as_read">اعتبرها كلها مقروءة</string>
+  <string name="notifications_direct_reply_action">رد</string>
   <string name="watchlist_title">قائمة المراقبة</string>
   <string name="preference_title_notification_poll">إشعارات الاستقصاء</string>
   <string name="preference_summary_notification_poll">السماح للتطبيق باستخدام البيانات للتحقق من الإشعارات الجديدة في الخلفية.</string>
@@ -645,7 +666,8 @@
   <string name="preference_title_notification_mention">إشارة</string>
   <string name="preference_summary_notification_mention">شخص ما يذكرك في صفحة</string>
   <string name="preference_title_notification_user_talk">صفحة النقاش</string>
-  <string name="preference_summary_notification_user_talk" fuzzy="true">رسائل من صفحات النقاش</string>
+  <string name="preference_summary_notification_user_talk">رسائل وردود من صفحات النقاش</string>
+  <string name="preference_title_notification_email_user">تلقي بريد إلكتروني</string>
   <string name="preference_title_notification_user_rights">تغييرات صلاحيات المستخدم</string>
   <string name="preference_title_notification_article_linked">وصلات إلى المقالات التي أنشأتها</string>
   <string name="preference_category_display_settings">إعدادات العرض</string>
@@ -771,6 +793,13 @@
   <string name="description_edit_tutorial_keep_it_short_instructions">بشكلٍ مثالي سطر واحد يكفي، ما بين كلمتين إلى اثنتا عشرة كلمة</string>
   <string name="description_edit_tutorial_button_label_start_editing">ابدأ التعديل</string>
   <string name="description_edit_tutorial_promise">ببدئي، أنا أعد بعدم إساءة استخدام هذه الميزة.</string>
+  <string name="customize_toolbar_title">تخصيص شريط الأدوات</string>
+  <string name="customize_toolbar_category_toolbar">شريط الأدوات</string>
+  <string name="customize_toolbar_category_menu">القائمة</string>
+  <string name="customize_toolbar_drag_and_drop_placeholder">اسحب وأسقط العناصر المُفضلة لك هنا 👋</string>
+  <string name="customize_toolbar_reset_to_default_button">إعادة التعيين إلى الافتراضي</string>
+  <string name="customize_toolbar_item_drag_handle_default_tooltip">اضغط باستمرار على أيقونة السحب لتحريك العنصر</string>
+  <string name="customize_toolbar_item_default_tooltip">اضغط واسحب عنصرًا لتغيير موضعه</string>
   <string name="suggested_edits_describe_articles">صِف المقالات</string>
   <string name="suggested_edits_caption_images">تعليقات الصور</string>
   <string name="suggested_edits_tag_images">ضع وسمًا على الصور</string>
@@ -861,6 +890,7 @@
   <string name="suggested_edits_paused_message">تم إيقاف عمليات التحرير المقترحة مؤقتًا حتى %1$s. عذرًا %2$s، تم إرجاع بعض مساهماتك الأخيرة.</string>
   <string name="suggested_edits_disabled_message">التعديلات المقترحة معطلة. عذرًا %s، تم إرجاع عدد كبير جدًا من مساهماتك الأخيرة.</string>
   <string name="suggested_edits_ip_blocked_message">يبدو أن عنوان الآيبي الخاص بك (أو نطاق عناوين الآيبي) محظور حاليًا من تحرير ويكيبيديا.</string>
+  <string name="suggested_edits_gate_message">عُذرًا، %s، ينبغي أن تُجري 3 تعديلات على الأقل في مقالة من أجل استخدام هذه الميزة.</string>
   <string name="suggested_edits_editing_tips_link_text">نصائح وحيل التحرير</string>
   <string name="suggested_edits_help_page_link_text">صفحة مساعدة التعديلات المقترحة</string>
   <string name="suggested_edits_edit_streak_label_text">تسلسل التحرير</string>
@@ -870,10 +900,10 @@
   <string name="suggested_edits_quality_excellent_text">ممتاز</string>
   <string name="suggested_edits_quality_very_good_text">جيد جدا</string>
   <string name="suggested_edits_quality_good_text">جيد</string>
-  <string name="suggested_edits_quality_okay_text">حسنا</string>
+  <string name="suggested_edits_quality_okay_text">حسنًا</string>
   <string name="suggested_edits_quality_sufficient_text">كافٍ</string>
   <string name="suggested_edits_quality_poor_text">فقير</string>
-  <string name="suggested_edits_quality_bad_text">سيء</string>
+  <string name="suggested_edits_quality_bad_text">سيئ</string>
   <string name="suggested_edits_label">تعديلات مقترحة</string>
   <plurals name="suggested_edits_contribution" fuzzy="true">
     <item quantity="one">مساهمة</item>
@@ -894,6 +924,7 @@
   <string name="suggested_edits_task_new">جديد</string>
   <string name="suggested_edits_cc0_notice">بالنشر، فإنك توافق على &lt;a href=\"%1$s\"&gt;شروط الاستخدام&lt;/a&gt;، ونشر تعديلك بلا رجعة تحت رخصة &lt;a href=\"%2$s\"&gt;CC BY-SA 3.0&lt;/a&gt;.</string>
   <string name="suggested_edits_reactivation_notification_title">التعديلات المقترحة</string>
+  <string name="suggested_edits_reactivation_notification_stage_one">شكرًا لتعديلك ويكيبيديا! لماذا لا تُكمل من حيث توقفت؟</string>
   <string name="suggested_edits_reactivation_notification_stage_two">لديك وقت لمواصلة تحسين ويكيبيديا؟ تحقق من اقتراحات التعديل هذه.</string>
   <string name="suggested_edits_contributions_screen_title">مساهمات %s</string>
   <string name="suggested_edits_contribution_language_label">اللغة</string>
@@ -903,6 +934,7 @@
   <string name="suggested_edits_contribution_article_label">مقالة</string>
   <string name="suggested_edits_contribution_views">%s مشاهدة</string>
   <string name="suggested_edits_contribution_seen_text">شوهدت %s مرة في آخر 30 يوماً</string>
+  <string name="suggested_edits_contribution_type_title">%1$d %2$s</string>
   <string name="suggested_edits_contribution_date_yesterday_text">أمس</string>
   <string name="suggested_edits_encourage_account_creation_title">هل تعلم أنه بإمكان الجميع تعديل ويكيبيديا؟</string>
   <string name="suggested_edits_encourage_account_creation_message">التعديلات المقترحة هي طريقة جديدة لتحرير ويكيبيديا على الأندرويد. تُساعدك على إجراء مساهمات صغيرة ولكنها حيوية في ويكيبيديا.\nهدفنا هو جعل التحرير أسهل وأكثر مرونة للجميع! سجّل الدخول أو انضم لويكيبيديا للبدء.</string>
@@ -1023,17 +1055,47 @@
   <string name="talk_last_modified">&lt;b&gt;آخر تعديل %1$s&lt;/b&gt; بواسطة %2$s</string>
   <string name="talk_snackbar_survey_text">شكراً لاستخدام صفحات النقاش. هل يمكنك مساعدتنا في تحسين التطبيق من خلال المشاركة في استطلاع؟</string>
   <string name="talk_snackbar_survey_action_text">ابدأ</string>
+  <string name="talk_share_discussion_subject">ويكيبيديا - نقاش في صفحة نقاش موضوع %s</string>
+  <string name="talk_share_talk_page">ويكيبيديا - نقاشات في صفحة نقاش</string>
+  <string name="talk_edit_disclaimer">هذه صفحة نقاش. فضلًا التزم بإرشادات صفحات النقاش، وتذكر أن توقّع مشاركاتك بكتابة أربع علامات مدّة: ~~~~ عند النشر باستخدام نص ويكي.&lt;br&gt;&lt;br&gt;&lt;a href=\"https://ar.wikipedia.org/wiki/ويكيبيديا:إرشادات_صفحة_النقاش\"&gt;ويكيبيديا:إرشادات صفحة النقاش&lt;/a&gt;</string>
+  <string name="talk_search_hint">ابحث في الرسائل</string>
+  <string name="talk_search_topics_hint">البحث عن المواضيع</string>
   <string name="talk_overflow_sort_by">رتب حسب</string>
+  <string name="talk_overflow_sort_date_published">تاريخ النشر</string>
+  <string name="talk_overflow_sort_topic_name">اسم الموضوع</string>
+  <string name="talk_thread_subscribed_to">تم الاشتراك في \"%s\"</string>
+  <string name="talk_thread_unsubscribed_from">إلغاء الاشتراك \"%s\"</string>
+  <string name="talk_list_item_overflow_subscribe">اشترك</string>
+  <string name="talk_list_item_overflow_subscribed">مشترك</string>
+  <string name="talk_list_item_overflow_mark_as_read">علّم كمقروءة</string>
+  <string name="talk_list_item_overflow_mark_as_unread">وضع علامة كغير مقروءة</string>
+  <string name="talk_list_item_overflow_share">شارك</string>
+  <string name="talk_list_item_last_comment_date">التعليق الأخير: %s</string>
+  <string name="talk_list_item_reply_icon_content_description">إجمالي الردود</string>
+  <string name="talk_list_item_user_icon_content_description">أيقونة المستخدم</string>
+  <string name="talk_list_item_swipe_mark_as_read">اقرأ</string>
+  <string name="talk_list_item_swipe_mark_as_unread">غير مقروءة</string>
+  <string name="talk_footer_about_this_talk_page">حول صفحة النقاش هذه</string>
+  <string name="talk_footer_view_edit_history">عرض تاريخ التعديل</string>
+  <string name="talk_footer_view_user_page">عرض صفحة المستخدم</string>
+  <string name="talk_footer_view_article">عرض المقالة</string>
+  <string name="talk_footer_last_modified">التعديل الأخير %1$s بواسطة %2$s</string>
+  <string name="menu_option_share_talk_discussion">شارك النقاش</string>
+  <string name="menu_option_share_talk_page">شارك صفحة النقاش</string>
   <string name="menu_option_share_edit">شارك التعديل</string>
   <string name="menu_option_user_profile">ملف %s</string>
   <string name="menu_option_user_contributions">مساهمات %s</string>
   <string name="menu_option_edit_source">عدل المصدر</string>
+  <string name="menu_option_user_page">%s صفحة المستخدم</string>
+  <string name="menu_option_find_in_talk_page_topic">تجد في موضوع صفحة الحديث</string>
+  <string name="talk_menu_copy_text">نسخ النص</string>
+  <string name="talk_menu_expand_threads">توسيع المواضيع</string>
   <string name="watchlist_details_watching_label">تُراقب</string>
   <string name="watchlist_details_watch_label">راقب</string>
   <string name="watchlist_details_next_edit">التعديل التالي</string>
   <string name="watchlist_details_prev_edit">التعديل السابق</string>
   <string name="thank_label">شكر</string>
-  <string name="view_user_page">View user page</string>
+  <string name="view_user_page">اعرض صفحة المستخدم</string>
   <string name="thank_dialog_title_text">إرسال الشكر علنًا</string>
   <string name="thank_dialog_text">\"الشكر\" هي طريقةٌ سهلةٌ لإظهار التقدير لعمل أحد المحررين في ويكيبيديا. لا يمكن التراجع عن \"الشكر\" وهي معروضةٌ علنًا.</string>
   <string name="thank_dialog_positive_button_text">إرسال شكر</string>
@@ -1041,6 +1103,20 @@
   <string name="thank_success_message">أُرسل \"شكرك\" إلى %s 👍</string>
   <string name="menu_option_view_user_profile">اعرض صفحة المستخدم</string>
   <string name="menu_option_view_user_talk">اعرض صفحة النقاش</string>
+  <string name="menu_option_view_user_contributions">اعرض مساهمات المستخدم</string>
+  <string name="revision_diff_compare">مقارنة المراجعات</string>
+  <string name="revision_diff_compare_title">مقارنة المراجعات: %s</string>
+  <string name="revision_diff_from">من:</string>
+  <string name="revision_diff_to">إلى:</string>
+  <string name="revision_diff_line_num">السطر %d</string>
+  <string name="revision_diff_line_nums">الأسطر %d–%d</string>
+  <string name="revision_diff_line_added">سطر مُضاف</string>
+  <string name="revision_diff_line_removed">سطر مُزال</string>
+  <string name="revision_diff_paragraph_added">فقرة مُضافة</string>
+  <string name="revision_diff_paragraph_removed">فقرة مُزالة</string>
+  <string name="revision_undo_title">تراجع عن التعديل</string>
+  <string name="revision_compare_button">مقارنة</string>
+  <string name="revision_compare_two_only">يمكن اختيار فقط مراجعين اثنين</string>
   <string name="watchlist_page_add_to_watchlist_snackbar">أُضيفت %1$s وصفحة نقاشها إلى قائمة مراقبتك %2$s.</string>
   <string name="watchlist_page_add_to_watchlist_snackbar_action">غيّر</string>
   <string name="watchlist_page_add_to_watchlist_snackbar_period_permanently">بشكلٍ دائمٍ</string>
@@ -1063,4 +1139,12 @@
   <string name="watchlist_page_moved">نُقلت</string>
   <string name="watchlist_page_protected">محمية</string>
   <string name="watchlist_page_deleted">حُذفت</string>
+  <string name="action_item_categories">التصنيفات</string>
+  <string name="page_no_categories">لا تنتمي هذه الصفحة إلى أية تصنيفات.</string>
+  <string name="category_tab_articles">المقالات</string>
+  <string name="category_tab_subcategories">التصنيفات الفرعية</string>
+  <string name="category_empty">لم يُعثر على مقالات في هذا التصنيف.</string>
+  <string name="subcategory_empty">لم يُعثر على تصنيفات فرعية في هذا التصنيف.</string>
+  <string name="search_namespaces">النطاقات</string>
+  <string name="revision_initial_none">لا شيء (هذه هي المراجعة الأولى)</string>
 </resources>

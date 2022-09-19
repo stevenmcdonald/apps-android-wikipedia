@@ -25,7 +25,8 @@
             android:layout_marginStart="32dp"
             android:contentDescription="@null"
             app:srcCompat="@drawable/feed_header_wordmark"
-            app:tint="?attr/material_theme_primary_color" />
+            app:tint="?attr/material_theme_primary_color"
+            android:visibility="gone"/>
     </androidx.appcompat.widget.Toolbar>
 
     <FrameLayout

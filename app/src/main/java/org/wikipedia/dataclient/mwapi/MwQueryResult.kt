@@ -20,11 +20,11 @@ class MwQueryResult {
     @SerialName("general") val siteInfo: SiteInfo? = null
     @SerialName("wikimediaeditortaskscounts") val editorTaskCounts: EditorTaskCounts? = null
     @SerialName("usercontribs") val userContributions: List<UserContribution> = emptyList()
-    @SerialName("allusers") val allUsers: List<User>? = null
+    @SerialName("allusers") val allUsers: List<UserInfo>? = null
 
     private val redirects: MutableList<Redirect>? = null
     private val converted: MutableList<ConvertedTitle>? = null
-    private val users: List<ListUserResponse>? = null
+    private val users: List<UserInfo>? = null
     private val tokens: Tokens? = null
     private val echomarkread: MarkReadResponse? = null
     val pages: MutableList<MwQueryPage>? = null
@@ -32,6 +32,7 @@ class MwQueryResult {
     val notifications: NotificationList? = null
     val watchlist: List<WatchlistItem> = emptyList()
     val namespaces: Map<String, Namespace>? = null
+    val allmessages: List<Message>? = null
 
     init {
         resolveConvertedTitles()
@@ -50,6 +51,10 @@ class MwQueryResult {
         return tokens?.watch
     }
 
+    fun rollbackToken(): String? {
+        return tokens?.rollback
+    }
+
     fun createAccountToken(): String? {
         return tokens?.createAccount
     }
@@ -62,7 +67,7 @@ class MwQueryResult {
         return amInfo?.requests?.find { "CaptchaAuthenticationRequest" == it.id }?.fields?.get("captchaId")?.value
     }
 
-    fun getUserResponse(userName: String): ListUserResponse? {
+    fun getUserResponse(userName: String): UserInfo? {
         // MediaWiki user names are case sensitive, but the first letter is always capitalized.
         return users?.find { userName.capitalize(Locale.getDefault()) == it.name }
     }
@@ -136,7 +141,8 @@ class MwQueryResult {
     private class Tokens(@SerialName("csrftoken") val csrf: String? = null,
                          @SerialName("createaccounttoken") val createAccount: String? = null,
                          @SerialName("logintoken") val login: String? = null,
-                         @SerialName("watchtoken") val watch: String? = null)
+                         @SerialName("watchtoken") val watch: String? = null,
+                         @SerialName("rollbacktoken") val rollback: String? = null)
 
     @Serializable
     class MarkReadResponse(val timestamp: String? = null, val result: String? = null)
@@ -179,8 +185,8 @@ class MwQueryResult {
     }
 
     @Serializable
-    class User {
-        val userid: Int = 0
+    class Message {
         val name: String = ""
+        val content: String = ""
     }
 }

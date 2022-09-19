@@ -45,11 +45,21 @@
   <string name="share_via">Deelen iwwer</string>
   <string name="image_share_via">Deelen iwwer</string>
   <string name="search_redirect_from">Virugeleet vu(n) %s</string>
+  <string name="page_edit_history_minor_edit">&lt;b&gt;k&lt;/b&gt; %s</string>
+  <string name="page_edit_history_comment_placeholder">Eidele Resumé vun der Ännerung</string>
+  <string name="page_edit_history_search_or_filter_edits_hint">No Ännerunge sichen oder Ännerunge filteren</string>
+  <string name="page_edit_history_filter_by">Filteren no</string>
+  <string name="page_edit_history_filter_by_all">All Ännerungen (%s)</string>
+  <string name="page_edit_history_filter_by_user">Benotzer-Ännerungen (%s)</string>
+  <string name="page_edit_history_filter_by_anon">Anonym Ännerungen (%s)</string>
+  <string name="page_edit_history_filter_by_bot">Bot-Ännerungen (%s)</string>
+  <string name="page_edit_history_empty_search_message">Versicht d\'&lt;a href=\"#\"&gt;Filteren&lt;/a&gt; z\'ännere fir méi Ännerungen ze gesinn</string>
   <string name="menu_page_show_tabs">Tabs weisen</string>
   <string name="menu_page_other_languages">Sprooch wiesselen</string>
   <string name="menu_page_find_in_page">Am Artikel sichen</string>
   <string name="menu_page_add_to_watchlist">Op d\'Iwwerwaachungslëscht derbäisetzen</string>
   <string name="menu_page_watch">Iwwerwaachen</string>
+  <string name="menu_page_unwatch">Net méi iwwerwaachen</string>
   <string name="menu_page_view_talk">Diskussiounssäit weisen</string>
   <string name="menu_page_talk_page">Diskussiounssäit</string>
   <string name="menu_page_view_edit_history">All Versioune vun der Säit weisen</string>
@@ -74,6 +84,7 @@
   <string name="on_this_day_page_share">Deelen</string>
   <string name="reading_list_page_share">Deelen</string>
   <string name="menu_text_select_edit_here">Hei änneren</string>
+  <string name="menu_edit_article">Artikel änneren</string>
   <string name="last_updated_text">Lescht Aktualiséierung %s</string>
   <string name="talk_page_link_text">Diskussiounssäit weisen</string>
   <string name="edit_history_link_text">All Versioune vun der Säit weisen</string>
@@ -142,6 +153,7 @@
   <string name="dialog_create_account_checking_progress">Nokucken</string>
   <string name="create_account_email_hint">E-Mail (Fakultativ)</string>
   <string name="create_account_password_repeat_hint">Passwuert widderhuelen</string>
+  <string name="create_account_password_is_username">Passwuert kann net selwecht si wéi de Benotzernumm</string>
   <string name="create_account_passwords_mismatch_error">D\'Passwierder sinn net déi selwescht</string>
   <string name="create_account_email_error">Net-valabel E-Mail-Adress</string>
   <string name="create_account_username_error">Net valabel Zeechen am Benotzernumm</string>
@@ -179,7 +191,6 @@
   <string name="page_protected_can_not_edit_anon">Leider kann dës Säit zu dësem Zäitpunkt net anonym geännert ginn.</string>
   <string name="page_protected_can_not_edit_title">Dës Säit ass gespaart</string>
   <string name="page_watchlist_overflow_menu_onboarding_tooltip_title">Op d\'Iwwerwaachungslëscht derbäisetzen</string>
-  <string name="page_notification_tooltip">Är Notifikatioune sinn elo hei.</string>
   <string name="settings_item_preferences">Astellungen</string>
   <string name="settings_activity_title">Astellungen</string>
   <string name="about_description">Iwwer d\'Wikipedia App</string>
@@ -211,6 +222,7 @@
   <string name="edit_preview">Kucken ouni ze späicheren</string>
   <string name="edit_undo">Réckgängeg maachen</string>
   <string name="edit_redo">Widderhuelen</string>
+  <string name="edit_rollback">Zrécksetzen</string>
   <string name="edit_zoom_in">Vergréisseren</string>
   <string name="edit_zoom_out"> Verklengeren</string>
   <string name="edit_summary_tag_typo">Tippfeeler verbessert</string>
@@ -464,10 +476,10 @@
   <string name="notifications_activity_title">Notifikatiounen</string>
   <string name="notifications_activity_title_archived">Notifikatiounen (archivéiert)</string>
   <string name="notifications_search">An den Notifikatioune sichen</string>
-  <string name="notifications_view_unread">Déi net geliest weisen</string>
+  <string name="notifications_view_unread">Déi net geliese weisen</string>
   <string name="notifications_view_archived">Déi archivéiert weisen</string>
   <string name="notifications_prefs">Astellunge vun den Notifikatiounen</string>
-  <string name="notifications_archive">Als geliest markéieren an archivéieren</string>
+  <string name="notifications_archive">Als gelies markéieren an archivéieren</string>
   <string name="notifications_poll_enable_title">Notifikatiounen aktivéieren</string>
   <string name="notifications_poll_enable_positive">Aschalten</string>
   <string name="notifications_poll_enable_negative">Net elo</string>
@@ -477,8 +489,8 @@
   <string name="notifications_mark_unread">Als net gelies markéieren</string>
   <string name="notifications_direct_reply_action">Äntweren</string>
   <string name="notifications_direct_reply_success">Äntwert publizéiert.</string>
-  <string name="notifications_mark_all_as_read_message">%d markéiert als geliest</string>
-  <string name="notifications_mark_all_as_unread_message">%d markéiert als net geliest</string>
+  <string name="notifications_mark_all_as_read_message">%d markéiert als gelies</string>
+  <string name="notifications_mark_all_as_unread_message">%d markéiert als net gelies</string>
   <string name="watchlist_title">Iwwerwaachungslëscht</string>
   <string name="preference_title_notification_system">System</string>
   <string name="preference_summary_notification_system">Message vum System</string>
@@ -718,6 +730,10 @@
   <string name="talk_no_subject">(Kee Sujet)</string>
   <string name="talk_reply_subject">Sujet</string>
   <string name="talk_snackbar_survey_action_text">Fir unzefänken</string>
+  <string name="talk_search_hint">An de Message sichen</string>
+  <string name="talk_overflow_sort_by">Zortéieren no</string>
+  <string name="talk_overflow_sort_date_published">Datum vun der Publikatioun</string>
+  <string name="talk_overflow_sort_topic_name">Numm vum Thema</string>
   <string name="menu_option_share_talk_discussion">Diskussioun deelen</string>
   <string name="menu_option_share_talk_page">Diskussiounssäit deelen</string>
   <string name="menu_option_user_contributions">Kontributioune vum %s</string>
@@ -730,6 +746,17 @@
   <string name="thank_dialog_negative_button_text">Ofbriechen</string>
   <string name="menu_option_view_user_profile">Benotzerprofil weisen</string>
   <string name="menu_option_view_user_talk">Diskussiounssäit weisen</string>
+  <string name="menu_option_view_user_contributions">Benotzerkontributioune weisen</string>
+  <string name="revision_diff_compare">Versioune vergläichen</string>
+  <string name="revision_diff_compare_title">Versioune vergläichen: %s</string>
+  <string name="revision_diff_from">Vum:</string>
+  <string name="revision_diff_to">Fir:</string>
+  <string name="revision_diff_paragraph_removed">Abschnitt ewechgeholl</string>
+  <string name="revision_undo_title">Ännerung zrécksetzen</string>
+  <string name="revision_undo_success">D\'Versioun gouf réckgängeg gemaach.</string>
+  <string name="revision_rollback_dialog_title">Sidd Dir sécher datt Dir dës Ännerungen zrécksetze wëllt?</string>
+  <string name="revision_rollback_success">Ännerung zréckgesat.</string>
+  <string name="revision_compare_button">Vergläichen</string>
   <string name="watchlist_page_add_to_watchlist_snackbar_action">Änneren</string>
   <string name="watchlist_page_add_to_watchlist_snackbar_period_permanently">permanent</string>
   <string name="watchlist_page_add_to_watchlist_snackbar_period_for_one_week">fir 1 Woch</string>
@@ -747,4 +774,9 @@
   <string name="watchlist_filter_pages">Säiten</string>
   <string name="watchlist_page_moved">Geréckelt</string>
   <string name="watchlist_page_deleted">Geläscht</string>
+  <string name="action_item_categories">Kategorien</string>
+  <string name="category_tab_articles">Artikelen</string>
+  <string name="category_tab_subcategories">Ënnerkategorien</string>
+  <string name="category_empty">Keng Artikelen an dëser Kategorie fonnt.</string>
+  <string name="search_namespaces">Nummraim</string>
 </resources>

@@ -45,12 +45,18 @@ import org.wikipedia.edit.summaries.EditSummaryFragment
 import org.wikipedia.history.HistoryEntry
 import org.wikipedia.login.LoginActivity
 import org.wikipedia.notifications.AnonymousNotificationHelper
-import org.wikipedia.page.*
+import org.wikipedia.page.ExclusiveBottomSheetPresenter
+import org.wikipedia.page.LinkMovementMethodExt
+import org.wikipedia.page.Namespace
+import org.wikipedia.page.PageTitle
 import org.wikipedia.page.linkpreview.LinkPreviewDialog
 import org.wikipedia.settings.Prefs
 import org.wikipedia.util.*
 import org.wikipedia.util.log.L
-import org.wikipedia.views.*
+import org.wikipedia.views.EditNoticesDialog
+import org.wikipedia.views.ViewAnimations
+import org.wikipedia.views.ViewUtil
+import org.wikipedia.views.WikiTextKeyboardView
 import java.io.IOException
 import java.util.concurrent.TimeUnit
 
@@ -65,7 +71,7 @@ class EditSectionActivity : BaseActivity() {
     lateinit var pageTitle: PageTitle
         private set
 
-    private var sectionID = 0
+    private var sectionID = -1
     private var sectionAnchor: String? = null
     private var textToHighlight: String? = null
     private var sectionWikitext: String? = null
@@ -87,7 +93,7 @@ class EditSectionActivity : BaseActivity() {
             binding.editSectionCaptchaContainer.visibility = View.GONE
             captchaHandler.hideCaptcha()
             editSummaryFragment.saveSummary()
-            disposables.add(CsrfTokenClient(pageTitle.wikiSite).token
+            disposables.add(CsrfTokenClient.getToken(pageTitle.wikiSite)
                     .subscribeOn(Schedulers.io())
                     .observeOn(AndroidSchedulers.mainThread())
                     .subscribe({ doSave(it) }) { showError(it) })
@@ -104,7 +110,7 @@ class EditSectionActivity : BaseActivity() {
         setNavigationBarColor(ResourceUtil.getThemedColor(this, android.R.attr.colorBackground))
 
         pageTitle = intent.getParcelableExtra(EXTRA_TITLE)!!
-        sectionID = intent.getIntExtra(EXTRA_SECTION_ID, 0)
+        sectionID = intent.getIntExtra(EXTRA_SECTION_ID, -1)
         sectionAnchor = intent.getStringExtra(EXTRA_SECTION_ANCHOR)
         textToHighlight = intent.getStringExtra(EXTRA_HIGHLIGHT_TEXT)
         supportActionBar?.title = ""
@@ -115,12 +121,12 @@ class EditSectionActivity : BaseActivity() {
         editPreviewFragment = supportFragmentManager.findFragmentById(R.id.edit_section_preview_fragment) as EditPreviewFragment
         editSummaryFragment = supportFragmentManager.findFragmentById(R.id.edit_section_summary_fragment) as EditSummaryFragment
         editSummaryFragment.title = pageTitle
-        funnel = WikipediaApp.getInstance().funnelManager.getEditFunnel(pageTitle)
+        funnel = WikipediaApp.instance.funnelManager.getEditFunnel(pageTitle)
 
         // Only send the editing start log event if the activity is created for the first time
         if (savedInstanceState == null) {
             funnel.logStart()
-            EditAttemptStepEvent.logInit(pageTitle.wikiSite.languageCode)
+            EditAttemptStepEvent.logInit(pageTitle)
         }
         if (savedInstanceState != null) {
             if (savedInstanceState.containsKey(EXTRA_KEY_TEMPORARY_WIKITEXT_STORED)) {
@@ -224,7 +230,7 @@ class EditSectionActivity : BaseActivity() {
             showProgressBar(true)
         }
         disposables.add(ServiceFactory.get(pageTitle.wikiSite).postEditSubmit(pageTitle.prefixedText,
-                sectionID.toString(), null, summaryText, if (isLoggedIn) "user" else null,
+                if (sectionID >= 0) sectionID.toString() else null, null, summaryText, if (isLoggedIn) "user" else null,
                 binding.editSectionText.text.toString(), null, currentRevision, token,
                 if (captchaHandler.isActive) captchaHandler.captchaId() else "null",
                 if (captchaHandler.isActive) captchaHandler.captchaWord() else "null")
@@ -272,7 +278,7 @@ class EditSectionActivity : BaseActivity() {
     private fun onEditSuccess(result: EditResult) {
         if (result is EditSuccessResult) {
             funnel.logSaved(result.revID)
-            EditAttemptStepEvent.logSaveSuccess(pageTitle.wikiSite.languageCode)
+            EditAttemptStepEvent.logSaveSuccess(pageTitle)
             // TODO: remove the artificial delay and use the new revision
             // ID returned to request the updated version of the page once
             // revision support for mobile-sections is added to RESTBase
@@ -300,7 +306,7 @@ class EditSectionActivity : BaseActivity() {
             funnel.logCaptchaShown()
         } else {
             funnel.logError(result.result)
-            EditAttemptStepEvent.logSaveFailure(pageTitle.wikiSite.languageCode)
+            EditAttemptStepEvent.logSaveFailure(pageTitle)
             // Expand to do everything.
             onEditFailure(Throwable())
         }
@@ -370,14 +376,14 @@ class EditSectionActivity : BaseActivity() {
                 // we're showing the Preview window, which means that the next step is to save it!
                 editTokenThenSave
                 funnel.logSaveAttempt()
-                EditAttemptStepEvent.logSaveAttempt(pageTitle.wikiSite.languageCode)
+                EditAttemptStepEvent.logSaveAttempt(pageTitle)
             }
             else -> {
                 // we must be showing the editing window, so show the Preview.
                 DeviceUtil.hideSoftKeyboard(this)
                 editPreviewFragment.showPreview(pageTitle, binding.editSectionText.text.toString())
                 funnel.logPreview()
-                EditAttemptStepEvent.logSaveIntent(pageTitle.wikiSite.languageCode)
+                EditAttemptStepEvent.logSaveIntent(pageTitle)
             }
         }
     }
@@ -492,7 +498,7 @@ class EditSectionActivity : BaseActivity() {
 
     private fun updateTextSize() {
         val extra = Prefs.editingTextSizeExtra
-        binding.editSectionText.textSize = WikipediaApp.getInstance().getFontSize(window) + extra.toFloat()
+        binding.editSectionText.textSize = WikipediaApp.instance.getFontSize(window) + extra.toFloat()
     }
 
     private fun resetToStart() {
@@ -510,7 +516,7 @@ class EditSectionActivity : BaseActivity() {
 
     private fun fetchSectionText() {
         if (sectionWikitext == null) {
-            disposables.add(ServiceFactory.get(pageTitle.wikiSite).getWikiTextForSectionWithInfo(pageTitle.prefixedText, sectionID)
+            disposables.add(ServiceFactory.get(pageTitle.wikiSite).getWikiTextForSectionWithInfo(pageTitle.prefixedText, if (sectionID >= 0) sectionID else null)
                     .subscribeOn(Schedulers.io())
                     .observeOn(AndroidSchedulers.mainThread())
                     .subscribe({ response ->
@@ -609,7 +615,9 @@ class EditSectionActivity : BaseActivity() {
         binding.editSectionText.post {
             binding.editSectionScroll.fullScroll(View.FOCUS_DOWN)
             binding.editSectionText.postDelayed(500) {
-                StringUtil.highlightEditText(binding.editSectionText, sectionWikitext!!, highlightText)
+                if (!isDestroyed) {
+                    StringUtil.highlightEditText(binding.editSectionText, sectionWikitext!!, highlightText)
+                }
             }
         }
     }

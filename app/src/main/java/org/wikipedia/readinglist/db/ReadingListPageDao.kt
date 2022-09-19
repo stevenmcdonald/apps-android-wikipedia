@@ -44,7 +44,7 @@ interface ReadingListPageDao {
         apiTitle: String, excludedStatus: Long): ReadingListPage?
 
     @Query("SELECT * FROM ReadingListPage WHERE wiki = :wiki AND lang = :lang AND namespace = :ns AND displayTitle = :displayTitle AND apiTitle = :apiTitle AND status != :excludedStatus")
-    fun getPagesByParams(wiki: WikiSite, lang: String, ns: Namespace, displayTitle: String,
+    suspend fun getPagesByParams(wiki: WikiSite, lang: String, ns: Namespace, displayTitle: String,
         apiTitle: String, excludedStatus: Long): List<ReadingListPage>
 
     @Query("SELECT * FROM ReadingListPage WHERE listId = :listId AND status != :excludedStatus")
@@ -100,7 +100,7 @@ interface ReadingListPageDao {
         for (page in pages) {
             insertPageIntoDb(list, page)
         }
-        WikipediaApp.getInstance().bus.post(ArticleSavedOrDeletedEvent(true, *pages.toTypedArray()))
+        WikipediaApp.instance.bus.post(ArticleSavedOrDeletedEvent(true, *pages.toTypedArray()))
         SavedPageSyncService.enqueue()
     }
 
@@ -173,7 +173,7 @@ interface ReadingListPageDao {
         if (queueForSync) {
             ReadingListSyncAdapter.manualSyncWithDeletePages(list, pages)
         }
-        WikipediaApp.getInstance().bus.post(ArticleSavedOrDeletedEvent(false, *pages.toTypedArray()))
+        WikipediaApp.instance.bus.post(ArticleSavedOrDeletedEvent(false, *pages.toTypedArray()))
         SavedPageSyncService.enqueue()
     }
 
@@ -254,7 +254,7 @@ interface ReadingListPageDao {
             page.status = ReadingListPage.STATUS_QUEUE_FOR_SAVE
             insertPageIntoDb(list, page)
         }
-        WikipediaApp.getInstance().bus.post(ArticleSavedOrDeletedEvent(true, page))
+        WikipediaApp.instance.bus.post(ArticleSavedOrDeletedEvent(true, page))
 
         SavedPageSyncService.enqueue()
         if (queueForSync) {
@@ -262,7 +262,7 @@ interface ReadingListPageDao {
         }
     }
 
-    fun getAllPageOccurrences(title: PageTitle): List<ReadingListPage> {
+    suspend fun getAllPageOccurrences(title: PageTitle): List<ReadingListPage> {
         return getPagesByParams(
             title.wikiSite, title.wikiSite.languageCode, title.namespace(),
             title.displayText, title.prefixedText, ReadingListPage.STATUS_QUEUE_FOR_DELETE
@@ -272,7 +272,7 @@ interface ReadingListPageDao {
     private fun addPageToList(list: ReadingList, title: PageTitle) {
         val protoPage = ReadingListPage(title)
         insertPageIntoDb(list, protoPage)
-        WikipediaApp.getInstance().bus.post(ArticleSavedOrDeletedEvent(true, protoPage))
+        WikipediaApp.instance.bus.post(ArticleSavedOrDeletedEvent(true, protoPage))
     }
 
     private fun insertPageIntoDb(list: ReadingList, page: ReadingListPage) {
