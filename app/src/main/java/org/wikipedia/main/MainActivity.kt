@@ -100,7 +100,22 @@ class MainActivity : SingleFragmentActivity<MainFragment>(), MainFragment.Callba
         } else {
             Log.d(TAG, "found default proxy urls: " + BuildConfig.DEF_PROXY)
             listOfUrls.addAll(BuildConfig.DEF_PROXY.split(","))
-            NetworkIntentService.submit(this@MainActivity, listOfUrls, DIRECT_URL)
+
+            /* expected format:
+               0. dnstt domain
+               1. dnstt key
+               2. dnstt path
+               3. doh url
+               4. dot address
+               (either 4 or 5 should be an empty string) */
+            val dnsttConfig = mutableListOf<String>()
+            dnsttConfig.add(BuildConfig.DNSTT_DOMAIN)
+            dnsttConfig.add(BuildConfig.DNSTT_KEY)
+            dnsttConfig.add(BuildConfig.DNSTT_PATH)
+            dnsttConfig.add(BuildConfig.DOH_URL)
+            dnsttConfig.add(BuildConfig.DOT_ADDR)
+
+            NetworkIntentService.submit(this@MainActivity, listOfUrls, DIRECT_URL, dnsttConfig)
         }
     }
 
