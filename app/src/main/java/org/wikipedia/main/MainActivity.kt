@@ -35,6 +35,7 @@ class MainActivity : SingleFragmentActivity<MainFragment>(), MainFragment.Callba
 
     // add all string values to this list value
     private val listOfUrls = mutableListOf<String>()
+    private val invalidUrls = mutableListOf<String>()
 
     private var waitingForEnvoy = false
 
@@ -45,30 +46,29 @@ class MainActivity : SingleFragmentActivity<MainFragment>(), MainFragment.Callba
         override fun onReceive(context: Context?, intent: Intent?) {
             if (intent != null && context != null) {
                 if (intent.action == BROADCAST_URL_VALIDATION_SUCCEEDED) {
-                    val validUrls = intent.getStringArrayListExtra(EXTENDED_DATA_VALID_URLS)
-                    Log.d(TAG, "received " + validUrls?.size + " valid urls")
-                    if (waitingForEnvoy) {
-                        if (validUrls != null && !validUrls.isEmpty()) {
-                            waitingForEnvoy = false
-                            val envoyUrl = validUrls[0]
-                            if (DIRECT_URL.equals(envoyUrl)) {
-                                Log.d(TAG, "got direct url: " + envoyUrl + ", don't need to start engine")
-                            } else {
-                                Log.d(TAG, "found a valid url: " + envoyUrl + ", start engine")
-                                // select the fastest one (urls are ordered by latency), reInitializeIfNeeded set to false
-                                CronetNetworking.initializeCronetEngine(context, envoyUrl)
-                            }
+                    val validUrl = intent.getStringExtra(EXTENDED_DATA_VALID_URL)
+                    if (validUrl.isNullOrEmpty()) {
+                        Log.e(TAG, "received a valid url that was empty or null")
+                    } else if (waitingForEnvoy) {
+                        waitingForEnvoy = false
+                        // select the first url that is returned (assumed to have the lowest latency)
+                        if (DIRECT_URL.equals(validUrl)) {
+                            Log.d(TAG, "got direct url: " + validUrl + ", don't need to start engine")
                         } else {
-                            Log.e(TAG, "received empty list of valid urls")
+                            Log.d(TAG, "found a valid url: " + validUrl + ", start engine")
+                            CronetNetworking.initializeCronetEngine(context, validUrl)
                         }
                     } else {
-                        Log.d(TAG, "already found a valid url")
+                        Log.d(TAG, "already selected a valid url, ignore valid url: " + validUrl)
                     }
                 } else if (intent.action == BROADCAST_URL_VALIDATION_FAILED) {
-                    val invalidUrls = intent.getStringArrayListExtra(EXTENDED_DATA_INVALID_URLS)
-                    Log.e(TAG, "received " + invalidUrls?.size + " invalid urls")
-                    if (invalidUrls != null && !invalidUrls.isEmpty()) {
-                        // TEMP: should envoy reset invalid list before getting ew urls from dnstt?
+                    val invalidUrl = intent.getStringExtra(EXTENDED_DATA_INVALID_URL)
+                    if (invalidUrl.isNullOrEmpty()) {
+                        Log.e(TAG, "received an invalid url that was empty or null")
+                    } else {
+                        Log.d(TAG, "got invalid url: " + invalidUrl)
+                        invalidUrls.add(invalidUrl)
+                        // TODO: there isn't an obvious way to check unchecked/invalid counts when getting new urls from dnstt
                         if (waitingForEnvoy && (invalidUrls.size >= listOfUrls.size)) {
                             Log.e(TAG, "no urls left to try, cannot start envoy/cronet")
                             // TEMP: clearing this flag will cause any dnstt urls that follow to be ignored
@@ -76,10 +76,7 @@ class MainActivity : SingleFragmentActivity<MainFragment>(), MainFragment.Callba
                         } else {
                             Log.e(TAG, "still trying urls, " + invalidUrls.size + " out of " + listOfUrls.size + " failed")
                         }
-                    } else {
-                        Log.e(TAG, "received empty list of invalid urls")
                     }
-
                 } else {
                     Log.e(TAG, "received unexpected intent: " + intent.action)
                 }
@@ -99,7 +96,9 @@ class MainActivity : SingleFragmentActivity<MainFragment>(), MainFragment.Callba
             Log.w(TAG, "no default proxy urls were provided")
         } else {
             Log.d(TAG, "found default proxy urls: " + BuildConfig.DEF_PROXY)
+            listOfUrls.clear()
             listOfUrls.addAll(BuildConfig.DEF_PROXY.split(","))
+            invalidUrls.clear()
 
             /* expected format:
                0. dnstt domain
@@ -115,7 +114,7 @@ class MainActivity : SingleFragmentActivity<MainFragment>(), MainFragment.Callba
             dnsttConfig.add(BuildConfig.DOH_URL)
             dnsttConfig.add(BuildConfig.DOT_ADDR)
 
-            NetworkIntentService.submit(this@MainActivity, listOfUrls, DIRECT_URL, dnsttConfig)
+            NetworkIntentService.submit(this@MainActivity, listOfUrls, DIRECT_URL, BuildConfig.HYST_CERT, dnsttConfig)
         }
     }
 
