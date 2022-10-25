@@ -45,8 +45,8 @@ class MainActivity : SingleFragmentActivity<MainFragment>(), MainFragment.Callba
     private val mBroadcastReceiver: BroadcastReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context?, intent: Intent?) {
             if (intent != null && context != null) {
-                if (intent.action == BROADCAST_URL_VALIDATION_SUCCEEDED) {
-                    val validUrl = intent.getStringExtra(EXTENDED_DATA_VALID_URL)
+                if (intent.action == ENVOY_BROADCAST_VALIDATION_SUCCEEDED) {
+                    val validUrl = intent.getStringExtra(ENVOY_DATA_URL_SUCCEEDED)
                     if (validUrl.isNullOrEmpty()) {
                         Log.e(TAG, "received a valid url that was empty or null")
                     } else if (waitingForEnvoy) {
@@ -61,8 +61,8 @@ class MainActivity : SingleFragmentActivity<MainFragment>(), MainFragment.Callba
                     } else {
                         Log.d(TAG, "already selected a valid url, ignore valid url: " + validUrl)
                     }
-                } else if (intent.action == BROADCAST_URL_VALIDATION_FAILED) {
-                    val invalidUrl = intent.getStringExtra(EXTENDED_DATA_INVALID_URL)
+                } else if (intent.action == ENVOY_BROADCAST_VALIDATION_FAILED) {
+                    val invalidUrl = intent.getStringExtra(ENVOY_DATA_URL_FAILED)
                     if (invalidUrl.isNullOrEmpty()) {
                         Log.e(TAG, "received an invalid url that was empty or null")
                     } else {
@@ -123,8 +123,8 @@ class MainActivity : SingleFragmentActivity<MainFragment>(), MainFragment.Callba
 
         // register to receive test results
         LocalBroadcastManager.getInstance(this).registerReceiver(mBroadcastReceiver, IntentFilter().apply {
-            addAction(BROADCAST_URL_VALIDATION_SUCCEEDED)
-            addAction(BROADCAST_URL_VALIDATION_FAILED)
+            addAction(ENVOY_BROADCAST_VALIDATION_SUCCEEDED)
+            addAction(ENVOY_BROADCAST_VALIDATION_FAILED)
         })
 
         setImageZoomHelper()
