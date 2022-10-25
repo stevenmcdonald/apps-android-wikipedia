@@ -11,7 +11,7 @@ import androidx.appcompat.widget.Toolbar
 import androidx.fragment.app.Fragment
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import org.greatfire.envoy.*
-import org.wikipedia.BuildConfig
+import org.greatfire.wikiunblocked.Secrets
 import org.wikipedia.Constants
 import org.wikipedia.R
 import org.wikipedia.activity.SingleFragmentActivity
@@ -92,30 +92,39 @@ class MainActivity : SingleFragmentActivity<MainFragment>(), MainFragment.Callba
     }
 
     fun envoyInit() {
-        if (BuildConfig.DEF_PROXY.isNullOrEmpty()) {
-            Log.w(TAG, "no default proxy urls were provided")
-        } else {
-            Log.d(TAG, "found default proxy urls: " + BuildConfig.DEF_PROXY)
-            listOfUrls.clear()
-            listOfUrls.addAll(BuildConfig.DEF_PROXY.split(","))
-            invalidUrls.clear()
 
-            /* expected format:
+        listOfUrls.clear()
+        invalidUrls.clear()
+
+        /* expected format:
                0. dnstt domain
                1. dnstt key
                2. dnstt path
                3. doh url
                4. dot address
                (either 4 or 5 should be an empty string) */
-            val dnsttConfig = mutableListOf<String>()
-            dnsttConfig.add(BuildConfig.DNSTT_DOMAIN)
-            dnsttConfig.add(BuildConfig.DNSTT_KEY)
-            dnsttConfig.add(BuildConfig.DNSTT_PATH)
-            dnsttConfig.add(BuildConfig.DOH_URL)
-            dnsttConfig.add(BuildConfig.DOT_ADDR)
+        val dnsttConfig = mutableListOf<String>()
+        dnsttConfig.add(Secrets().getdnsttdomain(packageName))
+        dnsttConfig.add(Secrets().getdnsttkey(packageName))
+        dnsttConfig.add(Secrets().getdnsttpath(packageName))
+        dnsttConfig.add(Secrets().getdohUrl(packageName))
+        dnsttConfig.add(Secrets().getdotAddr(packageName))
 
-            NetworkIntentService.submit(this@MainActivity, listOfUrls, DIRECT_URL, BuildConfig.HYST_CERT, dnsttConfig)
+        if (Secrets().getdefProxy(packageName).isNullOrEmpty()) {
+            Log.w(TAG, "no default proxy urls found, submit empty list to check dnstt for urls")
+        } else {
+            Log.d(TAG, "found default proxy urls: " + Secrets().getdefProxy(packageName))
+            listOfUrls.addAll(Secrets().getdefProxy(packageName).split(","))
         }
+
+        NetworkIntentService.submit(
+            this@MainActivity,
+            listOfUrls,
+            DIRECT_URL,
+            Secrets().gethystCert(packageName),
+            dnsttConfig
+        )
+
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
