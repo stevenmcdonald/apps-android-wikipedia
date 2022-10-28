@@ -14,11 +14,12 @@ apply plugin: 'kotlin-kapt'
 // final Properties PROD_PROPS = loadProperties(PROD_PROPS_FILE)
 // final Properties REPO_PROPS = loadProperties(REPO_PROPS_FILE)
 
-def dnsttServerProp = ""
+def dnsttDomainProp = ""
 def dnsttKeyProp = ""
 def dnsttPathProp = ""
 def dohUrlProp = ""
 def dotAddrProp = ""
+def hystCertProp = ""
 def defProxyProp = ""
 
 def static getDate() {
@@ -36,10 +37,10 @@ final JavaVersion JAVA_VERSION = JavaVersion.VERSION_1_8
 
 android {
 
-    if (project.hasProperty("dnsttserver")) {
-        dnsttServerProp = dnsttserver
+    if (project.hasProperty("dnsttdomain")) {
+        dnsttDomainProp = dnsttdomain
     } else {
-        println "WARNING: no dnsttserver prop found"
+        println "WARNING: no dnsttdomain prop found"
     }
 
     if (project.hasProperty("dnsttkey")) {
@@ -64,6 +65,12 @@ android {
         dotAddrProp = dotAddr
     } else {
         println "WARNING: no dotAddr prop found"
+    }
+
+    if (project.hasProperty("hystCert")) {
+        hystCertProp = hystCert
+    } else {
+        println "WARNING: no hystCert prop found"
     }
 
     if (project.hasProperty("defProxy")) {
@@ -109,11 +116,12 @@ android {
         buildConfigField "String", "EVENTGATE_ANALYTICS_EXTERNAL_BASE_URI", '"https://intake-analytics.wikimedia.org"'
         buildConfigField "String", "EVENTGATE_LOGGING_EXTERNAL_BASE_URI", '"https://intake-logging.wikimedia.org"'
 
-        buildConfigField "String", "DNSTT_SERVER", "\"$dnsttServerProp\""
+        buildConfigField "String", "DNSTT_DOMAIN", "\"$dnsttDomainProp\""
         buildConfigField "String", "DNSTT_KEY", "\"$dnsttKeyProp\""
         buildConfigField "String", "DNSTT_PATH", "\"$dnsttPathProp\""
         buildConfigField "String", "DOH_URL", "\"$dohUrlProp\""
         buildConfigField "String", "DOT_ADDR", "\"$dotAddrProp\""
+        buildConfigField "String", "HYST_CERT", "\"$hystCertProp\""
         buildConfigField "String", "DEF_PROXY", "\"$defProxyProp\""
 
         packagingOptions {
@@ -346,7 +354,7 @@ dependencies {
     debugImplementation files('libs/IEnvoyProxy.aar')
     // use maven dependencies for release builds to support automation
     releaseImplementation 'org.greatfire.envoy:cronet:102.0.5005.41'
-    releaseImplementation 'org.greatfire:envoy:102.0.5005.41'
+    releaseImplementation 'org.greatfire:envoy:102.00.5005.41.4'
     releaseImplementation 'org.greatfire:IEnvoyProxy:1.2.0'
 }
 
