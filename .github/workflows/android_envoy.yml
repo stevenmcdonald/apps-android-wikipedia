@@ -2,7 +2,7 @@ name: update wiki unblocked release
 
 on:
   push:
-    branches: [ wiki-unblocked, wiki-unblocked-actions, envoy-demo, hc-demo ]
+    branches: [ wiki-unblocked, envoy-demo, hc-demo ]
 
 jobs:
   build_release:
@@ -51,7 +51,7 @@ jobs:
       name: Delete previous release tag
       with:
         delete_release: false
-        tag_name: envoy-latest
+        tag_name: wiki-unblocked-latest
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     - uses: ncipollo/release-action@v1
@@ -59,7 +59,7 @@ jobs:
       with:
         name: wiki-unblocked
         commit: ${{ github.sha }}
-        tag: envoy-latest
+        tag: wiki-unblocked-latest
         artifacts: "app/build/outputs/apk/greatfire/release/app-greatfire-universal-release.apk,app/build/outputs/apk/greatfire/release/rev-hash.txt"
         body: This is an android release automatically built from the latest commit to the wiki-unblocked branch.
         token: ${{ secrets.GITHUB_TOKEN }}
