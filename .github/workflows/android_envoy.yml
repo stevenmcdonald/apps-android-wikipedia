@@ -31,7 +31,7 @@ jobs:
         DOH_URL: ${{ secrets.DOH_URL }}
         DEF_PROXY: ${{ secrets.DEF_PROXY }}
         HYST_CERT: ${{ secrets.HYST_CERT }}
-        run: ./gradlew clean assembleFullGfdroidRelease --stacktrace -Pdnsttdomain=$DNSTT_DOMAIN -Pdnsttkey=$DNSTT_KEY -Pdnsttpath=$DNSTT_PATH -PdohUrl=$DOH_URL -PdefProxy=$DEF_PROXY -PhystCert=$HYST_CERT
+      run: ./gradlew clean assembleFullGfdroidRelease --stacktrace -Pdnsttdomain=$DNSTT_DOMAIN -Pdnsttkey=$DNSTT_KEY -Pdnsttpath=$DNSTT_PATH -PdohUrl=$DOH_URL -PdefProxy=$DEF_PROXY -PhystCert=$HYST_CERT
     - name: List
       run: ls -alR ./app/build/outputs/apk/
     - uses: r0adkll/sign-android-release@v1
