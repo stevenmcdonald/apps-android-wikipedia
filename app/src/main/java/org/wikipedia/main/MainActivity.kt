@@ -124,7 +124,6 @@ class MainActivity : SingleFragmentActivity<MainFragment>(), MainFragment.Callba
             Secrets().gethystCert(packageName),
             dnsttConfig
         )
-
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
