@@ -25,7 +25,7 @@ jobs:
       run: git submodule update --init --recursive
     - name: Clean and build
       env:
-        DNSTT_DOMAIN: ${{ secrets.DNSTT_SERVER }}
+        DNSTT_DOMAIN: ${{ secrets.DNSTT_DOMAIN }}
         DNSTT_KEY: ${{ secrets.DNSTT_KEY }}
         DNSTT_PATH: ${{ secrets.DNSTT_PATH }}
         DOH_URL: ${{ secrets.DOH_URL }}
