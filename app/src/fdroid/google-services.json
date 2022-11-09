@@ -10,7 +10,7 @@
       "client_info": {
         "mobilesdk_app_id": "1:296120793014:android:34d2ba8d355ca9259a7317",
         "android_client_info": {
-          "package_name": "org.greatfire.wikiunblocked"
+          "package_name": "org.greatfire.wikiunblocked.fdroid"
         }
       },
       "oauth_client": [

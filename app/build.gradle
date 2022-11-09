@@ -169,7 +169,7 @@ android {
             // signingConfig signingConfigs.prod
         }
         fdroid {
-            applicationId 'org.greatfire.wikiunblocked'
+            applicationId 'org.greatfire.wikiunblocked.fdroid'
             // static string for fdroid repo
             versionName '3.7-fdroid'
             // signingConfig signingConfigs.prod
