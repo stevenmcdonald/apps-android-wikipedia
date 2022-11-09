@@ -1,4 +1,4 @@
-package org.greatfire.wikiunblocked
+package org.greatfire.wikiunblocked.fdroid
 
 class Secrets {
 
