@@ -21,9 +21,8 @@ def static getDate() {
     return formattedDate
 }
 
-// TODO - increment version? use parameter?
 def computeVersionName(label) {
-    return "2.7.${android.defaultConfig.versionCode}-${label}-${date}"
+    return "${android.defaultConfig.versionName}-${label}"
 }
 
 final JavaVersion JAVA_VERSION = JavaVersion.VERSION_1_8
@@ -52,7 +51,10 @@ android {
         applicationId 'org.wikipedia'
         minSdkVersion 21
         targetSdkVersion 32
-        versionCode 50412
+        // TODO: update versionName with each release
+        versionName "3.7"
+        // TODO: update versionCode with each PR
+        versionCode 100370
         testApplicationId 'org.wikipedia.test'
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         testInstrumentationRunnerArguments clearPackageData: 'true'
@@ -94,6 +96,7 @@ android {
         alpha { java.srcDirs += 'src/extra/java' }
         beta { java.srcDirs += 'src/extra/java' }
         greatfire { java.srcDirs += 'src/extra/java' }
+        fdroid { java.srcDirs += 'src/extra/java' }
         custom { java.srcDirs += 'src/extra/java' }
 
         test {
@@ -163,6 +166,12 @@ android {
         greatfire {
             applicationId 'org.greatfire.wikiunblocked'
             versionName computeVersionName('greatfire')
+            // signingConfig signingConfigs.prod
+        }
+        fdroid {
+            applicationId 'org.greatfire.wikiunblocked'
+            // static string for fdroid repo
+            versionName '3.7-fdroid'
             // signingConfig signingConfigs.prod
         }
         custom {
@@ -267,6 +276,7 @@ dependencies {
     alphaImplementation "com.google.mlkit:language-id:$mlKitVersion"
     betaImplementation "com.google.mlkit:language-id:$mlKitVersion"
     greatfireImplementation "com.google.mlkit:language-id:$mlKitVersion"
+    fdroidImplementation "com.google.mlkit:language-id:$mlKitVersion"
     customImplementation "com.google.mlkit:language-id:$mlKitVersion"
 
     // For receiving push notifications for logged-in users.
@@ -275,6 +285,7 @@ dependencies {
     alphaImplementation "com.google.firebase:firebase-messaging-ktx:$firebaseMessagingVersion"
     betaImplementation "com.google.firebase:firebase-messaging-ktx:$firebaseMessagingVersion"
     greatfireImplementation "com.google.firebase:firebase-messaging-ktx:$firebaseMessagingVersion"
+    fdroidImplementation "com.google.firebase:firebase-messaging-ktx:$firebaseMessagingVersion"
     customImplementation "com.google.firebase:firebase-messaging-ktx:$firebaseMessagingVersion"
 
     debugImplementation "com.squareup.leakcanary:leakcanary-android:$leakCanaryVersion"
