@@ -11,7 +11,7 @@ import androidx.appcompat.widget.Toolbar
 import androidx.fragment.app.Fragment
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import org.greatfire.envoy.*
-import org.greatfire.wikiunblocked.fdroid.Secrets
+import org.greatfire.wikiunblocked.Secrets
 import org.wikipedia.Constants
 import org.wikipedia.R
 import org.wikipedia.activity.SingleFragmentActivity
@@ -96,6 +96,9 @@ class MainActivity : SingleFragmentActivity<MainFragment>(), MainFragment.Callba
         listOfUrls.clear()
         invalidUrls.clear()
 
+        // secrets don't support fdroid package name
+        val shortPackage = packageName.removeSuffix(".fdroid")
+
         /* expected format:
                0. dnstt domain
                1. dnstt key
@@ -104,24 +107,24 @@ class MainActivity : SingleFragmentActivity<MainFragment>(), MainFragment.Callba
                4. dot address
                (either 4 or 5 should be an empty string) */
         val dnsttConfig = mutableListOf<String>()
-        dnsttConfig.add(Secrets().getdnsttdomain(packageName))
-        dnsttConfig.add(Secrets().getdnsttkey(packageName))
-        dnsttConfig.add(Secrets().getdnsttpath(packageName))
-        dnsttConfig.add(Secrets().getdohUrl(packageName))
-        dnsttConfig.add(Secrets().getdotAddr(packageName))
+        dnsttConfig.add(Secrets().getdnsttdomain(shortPackage))
+        dnsttConfig.add(Secrets().getdnsttkey(shortPackage))
+        dnsttConfig.add(Secrets().getdnsttpath(shortPackage))
+        dnsttConfig.add(Secrets().getdohUrl(shortPackage))
+        dnsttConfig.add(Secrets().getdotAddr(shortPackage))
 
-        if (Secrets().getdefProxy(packageName).isNullOrEmpty()) {
+        if (Secrets().getdefProxy(shortPackage).isNullOrEmpty()) {
             Log.w(TAG, "no default proxy urls found, submit empty list to check dnstt for urls")
         } else {
-            Log.d(TAG, "found default proxy urls: " + Secrets().getdefProxy(packageName))
-            listOfUrls.addAll(Secrets().getdefProxy(packageName).split(","))
+            Log.d(TAG, "found default proxy urls: " + Secrets().getdefProxy(shortPackage))
+            listOfUrls.addAll(Secrets().getdefProxy(shortPackage).split(","))
         }
 
         NetworkIntentService.submit(
             this@MainActivity,
             listOfUrls,
             DIRECT_URL,
-            Secrets().gethystCert(packageName),
+            Secrets().gethystCert(shortPackage),
             dnsttConfig
         )
     }

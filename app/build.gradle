@@ -96,7 +96,6 @@ android {
         alpha { java.srcDirs += 'src/extra/java' }
         beta { java.srcDirs += 'src/extra/java' }
         greatfire { java.srcDirs += 'src/extra/java' }
-        fdroid { java.srcDirs += 'src/extra/java' }
         custom { java.srcDirs += 'src/extra/java' }
 
         test {
@@ -276,7 +275,6 @@ dependencies {
     alphaImplementation "com.google.mlkit:language-id:$mlKitVersion"
     betaImplementation "com.google.mlkit:language-id:$mlKitVersion"
     greatfireImplementation "com.google.mlkit:language-id:$mlKitVersion"
-    fdroidImplementation "com.google.mlkit:language-id:$mlKitVersion"
     customImplementation "com.google.mlkit:language-id:$mlKitVersion"
 
     // For receiving push notifications for logged-in users.
@@ -285,7 +283,6 @@ dependencies {
     alphaImplementation "com.google.firebase:firebase-messaging-ktx:$firebaseMessagingVersion"
     betaImplementation "com.google.firebase:firebase-messaging-ktx:$firebaseMessagingVersion"
     greatfireImplementation "com.google.firebase:firebase-messaging-ktx:$firebaseMessagingVersion"
-    fdroidImplementation "com.google.firebase:firebase-messaging-ktx:$firebaseMessagingVersion"
     customImplementation "com.google.firebase:firebase-messaging-ktx:$firebaseMessagingVersion"
 
     debugImplementation "com.squareup.leakcanary:leakcanary-android:$leakCanaryVersion"
