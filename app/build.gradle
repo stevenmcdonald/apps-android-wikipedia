@@ -48,14 +48,15 @@ android {
     }
 
     defaultConfig {
-        applicationId 'org.wikipedia'
+        applicationId 'org.greatfire.wikiunblocked'
         minSdkVersion 21
-        targetSdkVersion 32
+        // targetSdkVersion 32
+        targetSdkVersion 31
         // TODO: update versionName with each release
         versionName "3.7"
         // TODO: update versionCode with each PR
         versionCode 100370
-        testApplicationId 'org.wikipedia.test'
+        testApplicationId 'org.greatfire.wikiunblocked.test'
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         testInstrumentationRunnerArguments clearPackageData: 'true'
 
