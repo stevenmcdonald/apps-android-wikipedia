@@ -49,11 +49,11 @@ android {
     }
 
     defaultConfig {
-        applicationId 'org.wikipedia'
+        applicationId 'org.greatfire.wikiunblocked'
         minSdkVersion 21
-        targetSdkVersion 32
-        versionCode 50412
-        testApplicationId 'org.wikipedia.test'
+        targetSdkVersion 31
+        versionCode 50394
+        testApplicationId 'org.greatfire.wikiunblocked.test'
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         testInstrumentationRunnerArguments clearPackageData: 'true'
 
