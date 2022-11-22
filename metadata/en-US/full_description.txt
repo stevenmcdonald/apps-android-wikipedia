@@ -1,0 +1,7 @@
+<p>Is Wikipedia censored where you are? If so, this app gives you full access to Wikipedia from your Android device. No other app needs to be installed. This app is based on the official Wikipedia Android app and has built-in anti-censorship technology. The app is available for free (and free of advertising). Search and explore more than 40+ million uncensored articles in 300+ languages, no matter where you are.</p>
+
+<p>Wikipedia is the world’s largest online encyclopedia. The Wikipedia Android app is open source as is this app. A community of developers with an interest in censorship evasion help to maintain and improve this app. The app is available for free and does not include any in-app advertising. Costs related to the running of the app are supported by GreatFire, a nonprofit organization that supports the rights of freedom of expression and freedom of access to information.</p>
+
+<p>Everything you find in the official Wikipedia app is also available in this app, including 40 million articles in over 300 languages. You can read information offline, even if Wikipedia is censored in your country.</p>
+
+<p>We’d love to hear from you! If you are able to contribute to the development of this app, please visit our page on GitHub: <a href="https://github.com/greatfire/envoy">https://github.com/greatfire/envoy</a></p>

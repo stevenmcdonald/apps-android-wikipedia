@@ -21,9 +21,8 @@ def static getDate() {
     return formattedDate
 }
 
-// TODO - increment version? use parameter?
 def computeVersionName(label) {
-    return "2.7.${android.defaultConfig.versionCode}-${label}-${date}"
+    return "${android.defaultConfig.versionName}-${label}"
 }
 
 final JavaVersion JAVA_VERSION = JavaVersion.VERSION_1_8
@@ -49,11 +48,15 @@ android {
     }
 
     defaultConfig {
-        applicationId 'org.wikipedia'
+        applicationId 'org.greatfire.wikiunblocked'
         minSdkVersion 21
-        targetSdkVersion 32
-        versionCode 50412
-        testApplicationId 'org.wikipedia.test'
+        // targetSdkVersion 32
+        targetSdkVersion 31
+        // TODO: update versionName with each release
+        versionName "3.7"
+        // TODO: update versionCode with each PR
+        versionCode 100370
+        testApplicationId 'org.greatfire.wikiunblocked.test'
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         testInstrumentationRunnerArguments clearPackageData: 'true'
 
@@ -163,6 +166,12 @@ android {
         greatfire {
             applicationId 'org.greatfire.wikiunblocked'
             versionName computeVersionName('greatfire')
+            // signingConfig signingConfigs.prod
+        }
+        fdroid {
+            applicationId 'org.greatfire.wikiunblocked.fdroid'
+            // static string for fdroid repo
+            versionName '3.7-fdroid'
             // signingConfig signingConfigs.prod
         }
         custom {
