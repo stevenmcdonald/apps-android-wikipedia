@@ -17,7 +17,7 @@ import org.wikipedia.analytics.LoginFunnel
 import org.wikipedia.login.LoginActivity
 import org.wikipedia.model.EnumCode
 import org.wikipedia.model.EnumCodeMap
-// import org.wikipedia.settings.Prefs
+import org.wikipedia.settings.Prefs
 import org.wikipedia.settings.languages.WikipediaLanguagesActivity
 import org.wikipedia.util.FeedbackUtil
 import org.wikipedia.util.UriUtil
@@ -42,11 +42,9 @@ class InitialOnboardingFragment : OnboardingFragment(), OnboardingPageView.Callb
     }
 
     override fun onSwitchChange(view: OnboardingPageView, checked: Boolean) {
-        /*
         if (OnboardingPage.of(view.tag as Int) == OnboardingPage.PAGE_USAGE_DATA) {
-            Prefs.isEventLoggingEnabled = checked
+            Prefs.isFirebaseLoggingEnabled = checked
         }
-        */
     }
 
     override fun onLinkClick(view: OnboardingPageView, url: String) {
@@ -86,11 +84,9 @@ class InitialOnboardingFragment : OnboardingFragment(), OnboardingPageView.Callb
             super.onCreateView(inflater, container, savedInstanceState)
             val position = requireArguments().getInt("position", 0)
             val view = inflater.inflate(OnboardingPage.of(position).layout, container, false) as OnboardingPageView
-            /*
             if (OnboardingPage.PAGE_USAGE_DATA.code() == position) {
-                view.setSwitchChecked(Prefs.isEventLoggingEnabled)
+                view.setSwitchChecked(Prefs.isFirebaseLoggingEnabled)
             }
-            */
             view.tag = position
             view.callback = callback
             return view
@@ -110,8 +106,8 @@ class InitialOnboardingFragment : OnboardingFragment(), OnboardingPageView.Callb
     internal enum class OnboardingPage(@LayoutRes val layout: Int) : EnumCode {
         PAGE_WELCOME(R.layout.inflate_initial_onboarding_page_zero),
         PAGE_EXPLORE(R.layout.inflate_initial_onboarding_page_one),
-        PAGE_READING_LISTS(R.layout.inflate_initial_onboarding_page_two);
-        // PAGE_USAGE_DATA(R.layout.inflate_initial_onboarding_page_three);
+        PAGE_READING_LISTS(R.layout.inflate_initial_onboarding_page_two),
+        PAGE_USAGE_DATA(R.layout.inflate_initial_onboarding_page_three);
 
         override fun code(): Int {
             return ordinal
