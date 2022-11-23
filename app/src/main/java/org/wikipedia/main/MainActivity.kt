@@ -132,12 +132,6 @@ class MainActivity : SingleFragmentActivity<MainFragment>(), MainFragment.Callba
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        // register to receive test results
-        LocalBroadcastManager.getInstance(this).registerReceiver(mBroadcastReceiver, IntentFilter().apply {
-            addAction(ENVOY_BROADCAST_VALIDATION_SUCCEEDED)
-            addAction(ENVOY_BROADCAST_VALIDATION_FAILED)
-        })
-
         setImageZoomHelper()
         if (Prefs.isInitialOnboardingEnabled && savedInstanceState == null) {
             // Updating preference so the search multilingual tooltip
@@ -153,6 +147,18 @@ class MainActivity : SingleFragmentActivity<MainFragment>(), MainFragment.Callba
         supportActionBar?.title = ""
         supportActionBar?.setDisplayHomeAsUpEnabled(false)
         binding.mainToolbar.navigationIcon = null
+    }
+
+    override fun onStart() {
+        super.onStart()
+
+        // moved to start/stop to avoid an issue with registering multiple instances of the receiver when app is swiped away
+        Log.d(TAG, "start/register broadcast receiver")
+        // register to receive test results
+        LocalBroadcastManager.getInstance(this).registerReceiver(mBroadcastReceiver, IntentFilter().apply {
+            addAction(ENVOY_BROADCAST_VALIDATION_SUCCEEDED)
+            addAction(ENVOY_BROADCAST_VALIDATION_FAILED)
+        })
     }
 
     override fun onResume() {
@@ -171,6 +177,15 @@ class MainActivity : SingleFragmentActivity<MainFragment>(), MainFragment.Callba
         }
 
         invalidateOptionsMenu()
+    }
+
+    override fun onStop() {
+        super.onStop()
+
+        // moved to start/stop to avoid an issue with registering multiple instances of the receiver when app is swiped away
+        Log.d(TAG, "stop/unregister broadcast receiver")
+        // unregister receiver for test results
+        LocalBroadcastManager.getInstance(this).unregisterReceiver(mBroadcastReceiver)
     }
 
     override fun createFragment(): MainFragment {
