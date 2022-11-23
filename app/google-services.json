@@ -1,121 +1,33 @@
 {
   "project_info": {
-    "project_number": "296120793014",
-    "firebase_url": "https://pushnotifications-73c5e.firebaseio.com",
-    "project_id": "pushnotifications-73c5e",
-    "storage_bucket": "pushnotifications-73c5e.appspot.com"
+    "project_number": "473033063447",
+    "project_id": "wiki-unblocked",
+    "storage_bucket": "wiki-unblocked.appspot.com"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:296120793014:android:34d2ba8d355ca9259a7317",
+        "mobilesdk_app_id": "1:473033063447:android:cbdc76077e0b098e3b3052",
         "android_client_info": {
           "package_name": "org.greatfire.wikiunblocked"
         }
       },
       "oauth_client": [
         {
-          "client_id": "296120793014-8l3acuf7qvvesvqngoc06j2nk2v0bhin.apps.googleusercontent.com",
+          "client_id": "473033063447-3dv74m2ju6l5vvvi4c57va75lkifvl8e.apps.googleusercontent.com",
           "client_type": 3
         }
       ],
       "api_key": [
         {
-          "current_key": "AIzaSyC7m9NhFXHiUPryquw7PecqFO0d9YPrVNE"
+          "current_key": "AIzaSyAc3dfM_-YvJoCdr-2gt1x_3ZKvxwZBc3E"
         }
       ],
       "services": {
         "appinvite_service": {
           "other_platform_oauth_client": [
             {
-              "client_id": "296120793014-8l3acuf7qvvesvqngoc06j2nk2v0bhin.apps.googleusercontent.com",
-              "client_type": 3
-            }
-          ]
-        }
-      }
-    },
-    {
-      "client_info": {
-        "mobilesdk_app_id": "1:296120793014:android:91392873d51c3eec9a7317",
-        "android_client_info": {
-          "package_name": "org.greatfire.wikiunblocked.alpha"
-        }
-      },
-      "oauth_client": [
-        {
-          "client_id": "296120793014-8l3acuf7qvvesvqngoc06j2nk2v0bhin.apps.googleusercontent.com",
-          "client_type": 3
-        }
-      ],
-      "api_key": [
-        {
-          "current_key": "AIzaSyC7m9NhFXHiUPryquw7PecqFO0d9YPrVNE"
-        }
-      ],
-      "services": {
-        "appinvite_service": {
-          "other_platform_oauth_client": [
-            {
-              "client_id": "296120793014-8l3acuf7qvvesvqngoc06j2nk2v0bhin.apps.googleusercontent.com",
-              "client_type": 3
-            }
-          ]
-        }
-      }
-    },
-    {
-      "client_info": {
-        "mobilesdk_app_id": "1:296120793014:android:66d972b42a3781d19a7317",
-        "android_client_info": {
-          "package_name": "org.greatfire.wikiunblocked.beta"
-        }
-      },
-      "oauth_client": [
-        {
-          "client_id": "296120793014-8l3acuf7qvvesvqngoc06j2nk2v0bhin.apps.googleusercontent.com",
-          "client_type": 3
-        }
-      ],
-      "api_key": [
-        {
-          "current_key": "AIzaSyC7m9NhFXHiUPryquw7PecqFO0d9YPrVNE"
-        }
-      ],
-      "services": {
-        "appinvite_service": {
-          "other_platform_oauth_client": [
-            {
-              "client_id": "296120793014-8l3acuf7qvvesvqngoc06j2nk2v0bhin.apps.googleusercontent.com",
-              "client_type": 3
-            }
-          ]
-        }
-      }
-    },
-    {
-      "client_info": {
-        "mobilesdk_app_id": "1:296120793014:android:d276194befc88f1e9a7317",
-        "android_client_info": {
-          "package_name": "org.greatfire.wikiunblocked.dev"
-        }
-      },
-      "oauth_client": [
-        {
-          "client_id": "296120793014-8l3acuf7qvvesvqngoc06j2nk2v0bhin.apps.googleusercontent.com",
-          "client_type": 3
-        }
-      ],
-      "api_key": [
-        {
-          "current_key": "AIzaSyC7m9NhFXHiUPryquw7PecqFO0d9YPrVNE"
-        }
-      ],
-      "services": {
-        "appinvite_service": {
-          "other_platform_oauth_client": [
-            {
-              "client_id": "296120793014-8l3acuf7qvvesvqngoc06j2nk2v0bhin.apps.googleusercontent.com",
+              "client_id": "473033063447-3dv74m2ju6l5vvvi4c57va75lkifvl8e.apps.googleusercontent.com",
               "client_type": 3
             }
           ]

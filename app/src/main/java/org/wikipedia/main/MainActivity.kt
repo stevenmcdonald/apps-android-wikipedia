@@ -10,13 +10,13 @@ import androidx.appcompat.view.ActionMode
 import androidx.appcompat.widget.Toolbar
 import androidx.fragment.app.Fragment
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
-import com.google.firebase.analytics.FirebaseAnalytics
 import org.greatfire.envoy.*
 import org.greatfire.wikiunblocked.Secrets
 import org.wikipedia.Constants
 import org.wikipedia.R
 import org.wikipedia.activity.SingleFragmentActivity
 import org.wikipedia.databinding.ActivityMainBinding
+import org.wikipedia.events.EventHandler
 import org.wikipedia.navtab.NavTab
 import org.wikipedia.onboarding.InitialOnboardingActivity
 import org.wikipedia.settings.Prefs
@@ -30,8 +30,8 @@ class MainActivity : SingleFragmentActivity<MainFragment>(), MainFragment.Callba
 
     private val DIRECT_URL = "https://www.wikipedia.org/"
 
-    // firebase logging
-    private var firebaseAnalytics: FirebaseAnalytics? = null
+    // event logging
+    private var eventHandler: EventHandler? = null
     private val EVENT_TAG_DIRECT = "DIRECT_URL"
     private val EVENT_PARAM_DIRECT_URL = "direct_url_value"
     private val EVENT_PARAM_DIRECT_SERVICE = "direct_url_service"
@@ -71,43 +71,28 @@ class MainActivity : SingleFragmentActivity<MainFragment>(), MainFragment.Callba
                         // select the first url that is returned (assumed to have the lowest latency)
                         if (DIRECT_URL.equals(validUrl)) {
 
-                            if (Prefs.isFirebaseLoggingEnabled) {
-                                // firebase logging
-                                val bundle = Bundle()
-                                bundle.putString(EVENT_PARAM_DIRECT_URL, validUrl)
-                                bundle.putString(EVENT_PARAM_DIRECT_SERVICE, validService)
-                                firebaseAnalytics?.logEvent(EVENT_TAG_DIRECT, bundle)
-                            } else {
-                                Log.d("ENVOY_LOG", "firebase logging off, don't log direct url event")
-                            }
+                            val bundle = Bundle()
+                            bundle.putString(EVENT_PARAM_DIRECT_URL, validUrl)
+                            bundle.putString(EVENT_PARAM_DIRECT_SERVICE, validService)
+                            eventHandler?.logEvent(EVENT_TAG_DIRECT, bundle)
 
                             Log.d(TAG, "got direct url: " + validUrl + ", don't need to start engine")
                         } else {
 
-                            if (Prefs.isFirebaseLoggingEnabled) {
-                                // firebase logging
-                                val bundle = Bundle()
-                                bundle.putString(EVENT_PARAM_SELECT_URL, validUrl)
-                                bundle.putString(EVENT_PARAM_SELECT_SERVICE, validService)
-                                firebaseAnalytics?.logEvent(EVENT_TAG_SELECT, bundle)
-                            } else {
-                                Log.d("ENVOY_LOG", "firebase logging off, don't log selected url event")
-                            }
+                            val bundle = Bundle()
+                            bundle.putString(EVENT_PARAM_SELECT_URL, validUrl)
+                            bundle.putString(EVENT_PARAM_SELECT_SERVICE, validService)
+                            eventHandler?.logEvent(EVENT_TAG_SELECT, bundle)
 
                             Log.d(TAG, "found a valid url: " + validUrl + ", start engine")
                             CronetNetworking.initializeCronetEngine(context, validUrl)
                         }
                     } else {
 
-                        if (Prefs.isFirebaseLoggingEnabled) {
-                            // firebase logging
-                            val bundle = Bundle()
-                            bundle.putString(EVENT_PARAM_VALID_URL, validUrl)
-                            bundle.putString(EVENT_PARAM_VALID_SERVICE, validService)
-                            firebaseAnalytics?.logEvent(EVENT_TAG_VALID, bundle)
-                        } else {
-                            Log.d("ENVOY_LOG", "firebase logging off, don't log valid url event")
-                        }
+                        val bundle = Bundle()
+                        bundle.putString(EVENT_PARAM_VALID_URL, validUrl)
+                        bundle.putString(EVENT_PARAM_VALID_SERVICE, validService)
+                        eventHandler?.logEvent(EVENT_TAG_VALID, bundle)
 
                         Log.d(TAG, "already selected a valid url, ignore valid url: " + validUrl)
                     }
@@ -118,15 +103,10 @@ class MainActivity : SingleFragmentActivity<MainFragment>(), MainFragment.Callba
                         Log.e(TAG, "received an invalid url that was empty or null")
                     } else {
 
-                        if (Prefs.isFirebaseLoggingEnabled) {
-                            // firebase logging
-                            val bundle = Bundle()
-                            bundle.putString(EVENT_PARAM_INVALID_URL, invalidUrl)
-                            bundle.putString(EVENT_PARAM_INVALID_SERVICE, invalidService)
-                            firebaseAnalytics?.logEvent(EVENT_TAG_INVALID, bundle)
-                        } else {
-                            Log.d("ENVOY_LOG", "firebase logging off, don't log invalid url event")
-                        }
+                        val bundle = Bundle()
+                        bundle.putString(EVENT_PARAM_INVALID_URL, invalidUrl)
+                        bundle.putString(EVENT_PARAM_INVALID_SERVICE, invalidService)
+                        eventHandler?.logEvent(EVENT_TAG_INVALID, bundle)
 
                         Log.d(TAG, "got invalid url: " + invalidUrl)
                         invalidUrls.add(invalidUrl)
@@ -196,10 +176,10 @@ class MainActivity : SingleFragmentActivity<MainFragment>(), MainFragment.Callba
 
         // firebase logging
         if (Prefs.isFirebaseLoggingEnabled) {
-            firebaseAnalytics = FirebaseAnalytics.getInstance(applicationContext)
+            eventHandler = EventHandler(applicationContext)
         } else {
             Log.d("ENVOY_LOG", "firebase logging off, don't initialize firebase")
-            firebaseAnalytics = null
+            eventHandler = null
         }
 
         // register to receive test results
