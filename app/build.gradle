@@ -29,15 +29,6 @@ final JavaVersion JAVA_VERSION = JavaVersion.VERSION_1_8
 
 android {
 
-    splits {
-        abi {
-            enable true
-            reset()
-            include 'x86', 'x86_64', 'armeabi-v7a', 'arm64-v8a'
-            universalApk true
-        }
-    }
-
     // Enable NDK build
     externalNativeBuild {
         cmake {
@@ -85,6 +76,11 @@ android {
         buildConfigField "String", "META_WIKI_BASE_URI", '"https://meta.wikimedia.org"'
         buildConfigField "String", "EVENTGATE_ANALYTICS_EXTERNAL_BASE_URI", '"https://intake-analytics.wikimedia.org"'
         buildConfigField "String", "EVENTGATE_LOGGING_EXTERNAL_BASE_URI", '"https://intake-logging.wikimedia.org"'
+
+        ndk {
+            abiFilters = []
+            abiFilters.addAll(ABI_FILTERS.split(';').collect{it as String})
+        }
 
         packagingOptions {
             doNotStrip '**/libcronet*.so'
@@ -213,10 +209,13 @@ import com.android.build.OutputFile
 
 android.applicationVariants.all { variant ->
     variant.outputs.each { output ->
-        def baseAbiVersionCode = project.ext.abiCodes.get(output.getFilter(OutputFile.ABI))
-        if (baseAbiVersionCode != null) {
-            output.versionCodeOverride = baseAbiVersionCode * 10000 + variant.versionCode
+        def defaultCode = variant.versionCode
+        def filter = output.getFilter(OutputFile.ABI)
+        def abiMultiplier = project.ext.abiCodes.get(filter)
+        if (abiMultiplier == null) {
+            abiMultiplier = 0
         }
+        output.versionCodeOverride = abiMultiplier * 10000 + defaultCode
     }
 }
 
