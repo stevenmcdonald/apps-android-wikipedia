@@ -6,7 +6,7 @@ import android.util.Log
 import com.google.firebase.analytics.FirebaseAnalytics
 import org.wikipedia.settings.Prefs
 
-class EventHandler (applicationContext: Context) {
+class EventHandler(applicationContext: Context) {
 
     // private val TAG = "EventHandler"
     // TEMP

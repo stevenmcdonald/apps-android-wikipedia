@@ -4,7 +4,7 @@ import android.content.Context
 import android.os.Bundle
 import android.util.Log
 
-class EventHandler (applicationContext: Context) {
+class EventHandler(applicationContext: Context) {
 
     // private val TAG = "EventHandler_Stub"
     // TEMP
