@@ -103,10 +103,11 @@ class AnnouncementClientTest : MockRetrofitTest() {
         MatcherAssert.assertThat(AnnouncementClient.shouldShow(announcement, "", dateDuring), Matchers.`is`(false))
     }
 
+    // tests are no longer run against the alpha build so this test cannot use an announcement with the "beta" flag
     @Test
     @Throws(Throwable::class)
-    fun testBetaWithVersion() {
-        val announcement = announcementList.items[ANNOUNCEMENT_BETA_WITH_VERSION]
+    fun testWithVersion() {
+        val announcement = announcementList.items[ANNOUNCEMENT_WITH_VERSION]
         val dateDuring = dateFormat.parse("2016-11-20")!!
         MatcherAssert.assertThat(AnnouncementClient.shouldShow(announcement, "US", dateDuring), Matchers.`is`(true))
         MatcherAssert.assertThat(announcement.minVersion(), Matchers.`is`(200))
@@ -128,7 +129,7 @@ class AnnouncementClientTest : MockRetrofitTest() {
         private const val ANNOUNCEMENT_INVALID_DATES = 3
         private const val ANNOUNCEMENT_NO_DATES = 4
         private const val ANNOUNCEMENT_NO_COUNTRIES = 5
-        private const val ANNOUNCEMENT_BETA_WITH_VERSION = 6
+        private const val ANNOUNCEMENT_WITH_VERSION = 6
         private const val ANNOUNCEMENT_FOR_OLD_VERSION = 7
         private const val ANNOUNCEMENT_JSON_FILE = "announce_2016_11_21.json"
     }

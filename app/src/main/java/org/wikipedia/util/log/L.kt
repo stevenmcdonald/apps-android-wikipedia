@@ -106,9 +106,14 @@ object L {
     // worth crashing on everything but prod
     fun logRemoteError(t: Throwable) {
         LEVEL_E.log("", t)
+
+        // logCrashManually(t) calls L.e(throwable) calls LEVEL_E.log("", t) which is already called above
+        // also this throws UninitializedPropertyAccessException which causes testMalformedSamplingGroup to fail
+        /*
         if (!ReleaseUtil.isPreBetaRelease) {
             WikipediaApp.instance.logCrashManually(t)
         }
+        */
     }
 
     private abstract class LogLevel {
