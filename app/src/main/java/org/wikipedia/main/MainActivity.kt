@@ -16,6 +16,7 @@ import org.wikipedia.Constants
 import org.wikipedia.R
 import org.wikipedia.activity.SingleFragmentActivity
 import org.wikipedia.databinding.ActivityMainBinding
+import org.wikipedia.events.EventHandler
 import org.wikipedia.navtab.NavTab
 import org.wikipedia.onboarding.InitialOnboardingActivity
 import org.wikipedia.settings.Prefs
@@ -28,6 +29,21 @@ class MainActivity : SingleFragmentActivity<MainFragment>(), MainFragment.Callba
     private val TAG = "MainActivity"
 
     private val DIRECT_URL = "https://www.wikipedia.org/"
+
+    // event logging
+    private var eventHandler: EventHandler? = null
+    private val EVENT_TAG_DIRECT = "DIRECT_URL"
+    private val EVENT_PARAM_DIRECT_URL = "direct_url_value"
+    private val EVENT_PARAM_DIRECT_SERVICE = "direct_url_service"
+    private val EVENT_TAG_SELECT = "SELECTED_URL"
+    private val EVENT_PARAM_SELECT_URL = "selected_url_value"
+    private val EVENT_PARAM_SELECT_SERVICE = "selected_url_service"
+    private val EVENT_TAG_VALID = "VALID_URL"
+    private val EVENT_PARAM_VALID_URL = "valid_url_value"
+    private val EVENT_PARAM_VALID_SERVICE = "valid_url_service"
+    private val EVENT_TAG_INVALID = "INVALID_URL"
+    private val EVENT_PARAM_INVALID_URL = "invalid_url_value"
+    private val EVENT_PARAM_INVALID_SERVICE = "invalid_url_service"
 
     private lateinit var binding: ActivityMainBinding
 
@@ -47,25 +63,51 @@ class MainActivity : SingleFragmentActivity<MainFragment>(), MainFragment.Callba
             if (intent != null && context != null) {
                 if (intent.action == ENVOY_BROADCAST_VALIDATION_SUCCEEDED) {
                     val validUrl = intent.getStringExtra(ENVOY_DATA_URL_SUCCEEDED)
+                    val validService = intent.getStringExtra(ENVOY_DATA_SERVICE_SUCCEEDED)
                     if (validUrl.isNullOrEmpty()) {
                         Log.e(TAG, "received a valid url that was empty or null")
                     } else if (waitingForEnvoy) {
                         waitingForEnvoy = false
                         // select the first url that is returned (assumed to have the lowest latency)
                         if (DIRECT_URL.equals(validUrl)) {
+
+                            val bundle = Bundle()
+                            bundle.putString(EVENT_PARAM_DIRECT_URL, validUrl)
+                            bundle.putString(EVENT_PARAM_DIRECT_SERVICE, validService)
+                            eventHandler?.logEvent(EVENT_TAG_DIRECT, bundle)
+
                             Log.d(TAG, "got direct url: " + validUrl + ", don't need to start engine")
                         } else {
+
+                            val bundle = Bundle()
+                            bundle.putString(EVENT_PARAM_SELECT_URL, validUrl)
+                            bundle.putString(EVENT_PARAM_SELECT_SERVICE, validService)
+                            eventHandler?.logEvent(EVENT_TAG_SELECT, bundle)
+
                             Log.d(TAG, "found a valid url: " + validUrl + ", start engine")
                             CronetNetworking.initializeCronetEngine(context, validUrl)
                         }
                     } else {
+
+                        val bundle = Bundle()
+                        bundle.putString(EVENT_PARAM_VALID_URL, validUrl)
+                        bundle.putString(EVENT_PARAM_VALID_SERVICE, validService)
+                        eventHandler?.logEvent(EVENT_TAG_VALID, bundle)
+
                         Log.d(TAG, "already selected a valid url, ignore valid url: " + validUrl)
                     }
                 } else if (intent.action == ENVOY_BROADCAST_VALIDATION_FAILED) {
                     val invalidUrl = intent.getStringExtra(ENVOY_DATA_URL_FAILED)
+                    val invalidService = intent.getStringExtra(ENVOY_DATA_SERVICE_FAILED)
                     if (invalidUrl.isNullOrEmpty()) {
                         Log.e(TAG, "received an invalid url that was empty or null")
                     } else {
+
+                        val bundle = Bundle()
+                        bundle.putString(EVENT_PARAM_INVALID_URL, invalidUrl)
+                        bundle.putString(EVENT_PARAM_INVALID_SERVICE, invalidService)
+                        eventHandler?.logEvent(EVENT_TAG_INVALID, bundle)
+
                         Log.d(TAG, "got invalid url: " + invalidUrl)
                         invalidUrls.add(invalidUrl)
                         // TODO: there isn't an obvious way to check unchecked/invalid counts when getting new urls from dnstt
@@ -131,6 +173,14 @@ class MainActivity : SingleFragmentActivity<MainFragment>(), MainFragment.Callba
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        // firebase logging
+        if (Prefs.isFirebaseLoggingEnabled) {
+            eventHandler = EventHandler(applicationContext)
+        } else {
+            Log.d("ENVOY_LOG", "firebase logging off, don't initialize firebase")
+            eventHandler = null
+        }
 
         setImageZoomHelper()
         if (Prefs.isInitialOnboardingEnabled && savedInstanceState == null) {

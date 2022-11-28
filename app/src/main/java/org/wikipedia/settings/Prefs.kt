@@ -120,6 +120,10 @@ object Prefs {
         get() = false
         set(enabled) = PrefsIoUtil.setBoolean(R.string.preference_key_eventlogging_opt_in, enabled)
 
+    var isFirebaseLoggingEnabled
+        get() = PrefsIoUtil.getBoolean(R.string.preference_key_firebaselogging_opt_in, true)
+        set(enabled) = PrefsIoUtil.setBoolean(R.string.preference_key_firebaselogging_opt_in, enabled)
+
     val announcementsCountryOverride
         get() = PrefsIoUtil.getString(R.string.preference_key_announcement_country_override, null)
 
