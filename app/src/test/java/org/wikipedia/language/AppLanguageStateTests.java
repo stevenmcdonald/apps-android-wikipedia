@@ -31,8 +31,8 @@ public class AppLanguageStateTests {
         list.add("es");
         list.add("zh-hant");
         WikipediaApp.Companion.getInstance().getLanguageState().setAppLanguageCodes(list);
-        Assert.assertTrue(WikipediaApp.Companion.getInstance().getLanguageState().getAppLanguageCode().equals("en")
-                && WikipediaApp.Companion.getInstance().getLanguageState().getAppLanguageCodes().size() == 4);
+        Assert.assertTrue(WikipediaApp.Companion.getInstance().getLanguageState().getAppLanguageCode().equals("en"));
+        Assert.assertTrue(WikipediaApp.Companion.getInstance().getLanguageState().getAppLanguageCodes().size() == 4);
     }
 
     @Test public void testRemoveAppLanguages() {
