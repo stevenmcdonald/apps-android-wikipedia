@@ -28,7 +28,7 @@ class MainActivity : SingleFragmentActivity<MainFragment>(), MainFragment.Callba
 
     private val TAG = "MainActivity"
 
-    private val DIRECT_URL = "https://www.wikipedia.org/"
+    private val DIRECT_URL = arrayListOf<String>("https://www.wikipedia.org/")
 
     // event logging
     private var eventHandler: EventHandler? = null
@@ -69,7 +69,7 @@ class MainActivity : SingleFragmentActivity<MainFragment>(), MainFragment.Callba
                     } else if (waitingForEnvoy) {
                         waitingForEnvoy = false
                         // select the first url that is returned (assumed to have the lowest latency)
-                        if (DIRECT_URL.equals(validUrl)) {
+                        if (DIRECT_URL.contains(validUrl)) {
 
                             val bundle = Bundle()
                             bundle.putString(EVENT_PARAM_DIRECT_URL, validUrl)
