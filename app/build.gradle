@@ -210,7 +210,8 @@ import com.android.build.OutputFile
 android.applicationVariants.all { variant ->
     variant.outputs.each { output ->
         def defaultCode = variant.versionCode
-        def filter = output.getFilter(OutputFile.ABI)
+        // this only matches to a number for a single filter value
+        def filter = ABI_FILTERS
         def abiMultiplier = project.ext.abiCodes.get(filter)
         if (abiMultiplier == null) {
             abiMultiplier = 0

@@ -33,6 +33,45 @@
           ]
         }
       }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:473033063447:android:cbdc76077e0b098e3b3052",
+        "android_client_info": {
+          "package_name": "org.greatfire.wikiunblocked.alpha"
+        }
+      },
+      "api_key": [
+        {
+          "current_key": "AIzaSyAc3dfM_-YvJoCdr-2gt1x_3ZKvxwZBc3E"
+        }
+      ]
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:473033063447:android:cbdc76077e0b098e3b3052",
+        "android_client_info": {
+          "package_name": "org.greatfire.wikiunblocked.beta"
+        }
+      },
+      "api_key": [
+        {
+          "current_key": "AIzaSyAc3dfM_-YvJoCdr-2gt1x_3ZKvxwZBc3E"
+        }
+      ]
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:473033063447:android:cbdc76077e0b098e3b3052",
+        "android_client_info": {
+          "package_name": "org.greatfire.wikiunblocked.dev"
+        }
+      },
+      "api_key": [
+        {
+          "current_key": "AIzaSyAc3dfM_-YvJoCdr-2gt1x_3ZKvxwZBc3E"
+        }
+      ]
     }
   ],
   "configuration_version": "1"
