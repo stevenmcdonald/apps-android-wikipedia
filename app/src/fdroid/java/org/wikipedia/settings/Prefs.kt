@@ -116,11 +116,11 @@ object Prefs {
 
     var isEventLoggingEnabled
         // TEMP: hard code to false for now so events are not logged to wikipedia
-        // get() = PrefsIoUtil.getBoolean(R.string.preference_key_eventlogging_opt_in, true)
         get() = false
         set(enabled) = PrefsIoUtil.setBoolean(R.string.preference_key_eventlogging_opt_in, enabled)
 
     var isFirebaseLoggingEnabled
+        // TEMP: hard code to false for now so events are not logged for fdroid builds
         get() = false
         set(enabled) = PrefsIoUtil.setBoolean(R.string.preference_key_firebaselogging_opt_in, enabled)
 
