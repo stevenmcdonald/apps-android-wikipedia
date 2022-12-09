@@ -18,8 +18,8 @@ import org.wikipedia.Constants
 import org.wikipedia.R
 import org.wikipedia.activity.SingleFragmentActivity
 import org.wikipedia.databinding.ActivityMainBinding
-import org.wikipedia.events.EventHandler
 import org.wikipedia.dataclient.WikiSite
+import org.wikipedia.events.EventHandler
 import org.wikipedia.navtab.NavTab
 import org.wikipedia.onboarding.InitialOnboardingActivity
 import org.wikipedia.page.PageActivity
