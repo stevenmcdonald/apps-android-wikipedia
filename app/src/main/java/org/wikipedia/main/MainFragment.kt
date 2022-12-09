@@ -538,6 +538,10 @@ class MainFragment : Fragment(), BackPressedHandler, MenuProvider, FeedFragment.
         binding.mainNavTabLayout.selectedItemId = binding.mainNavTabLayout.menu.getItem(tab.code()).itemId
     }
 
+    fun refreshFragment() {
+        refreshContents()
+    }
+
     private fun refreshContents() {
         when (val fragment = currentFragment) {
             is FeedFragment -> fragment.refresh()

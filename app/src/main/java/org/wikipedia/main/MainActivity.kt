@@ -32,7 +32,7 @@ class MainActivity : SingleFragmentActivity<MainFragment>(), MainFragment.Callba
 
     private val TAG = "MainActivity"
 
-    private val DIRECT_URL = arrayListOf<String>() // ("https://www.wikipedia.org/")
+    private val DIRECT_URL = arrayListOf<String>("https://www.wikipedia.org/")
 
     // event logging
     private var eventHandler: EventHandler? = null
@@ -91,6 +91,13 @@ class MainActivity : SingleFragmentActivity<MainFragment>(), MainFragment.Callba
 
                             Log.d(TAG, "found a valid url: " + validUrl + ", start engine")
                             CronetNetworking.initializeCronetEngine(context, validUrl)
+
+                            if (fragment is MainFragment) {
+                                Log.d(TAG, "engine started, refresh main fragment")
+                                fragment.refreshFragment()
+                            } else {
+                                Log.d(TAG, "unexpected fragment class, can't refresh")
+                            }
                         }
                     } else {
 
