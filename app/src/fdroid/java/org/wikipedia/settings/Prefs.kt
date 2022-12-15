@@ -5,6 +5,7 @@ import okhttp3.HttpUrl.Companion.toHttpUrlOrNull
 import okhttp3.logging.HttpLoggingInterceptor
 import org.wikipedia.BuildConfig
 import org.wikipedia.R
+import org.wikipedia.WikipediaApp
 import org.wikipedia.analytics.SessionData
 import org.wikipedia.analytics.SessionFunnel
 import org.wikipedia.analytics.eventplatform.StreamConfig
@@ -113,6 +114,10 @@ object Prefs {
     var textSizeMultiplier
         get() = PrefsIoUtil.getInt(R.string.preference_key_text_size_multiplier, 0)
         set(multiplier) = PrefsIoUtil.setInt(R.string.preference_key_text_size_multiplier, multiplier)
+
+    var editingTextSizeMultiplier
+        get() = PrefsIoUtil.getInt(R.string.preference_key_editing_text_size_multiplier, 0)
+        set(multiplier) = PrefsIoUtil.setInt(R.string.preference_key_editing_text_size_multiplier, multiplier)
 
     var isEventLoggingEnabled
         // TEMP: hard code to false for now so events are not logged to wikipedia
@@ -603,4 +608,72 @@ object Prefs {
     var talkTopicExpandOrCollapseByDefault
         get() = PrefsIoUtil.getBoolean(R.string.preference_key_talk_topic_expand_all, true)
         set(value) = PrefsIoUtil.setBoolean(R.string.preference_key_talk_topic_expand_all, value)
+
+    var userContribFilterExcludedNs
+        get() = JsonUtil.decodeFromString<Set<Int>>(PrefsIoUtil.getString(R.string.preference_key_user_contrib_filter_excluded_ns, null))
+                ?: emptySet()
+        set(value) = PrefsIoUtil.setString(R.string.preference_key_user_contrib_filter_excluded_ns, JsonUtil.encodeToString(value))
+
+    var userContribFilterLangCode
+        get() = PrefsIoUtil.getString(R.string.preference_key_user_contrib_filter_lang_code, WikipediaApp.instance.appOrSystemLanguageCode)!!
+        set(value) = PrefsIoUtil.setString(R.string.preference_key_user_contrib_filter_lang_code, value)
+
+    var importReadingListsNewInstallDialogShown
+        get() = PrefsIoUtil.getBoolean(R.string.preference_key_import_reading_lists_new_install_dialog_shown, true)
+        set(value) = PrefsIoUtil.setBoolean(R.string.preference_key_import_reading_lists_new_install_dialog_shown, value)
+
+    var importReadingListsDialogShown
+        get() = PrefsIoUtil.getBoolean(R.string.preference_key_import_reading_lists_dialog_shown, true)
+        set(value) = PrefsIoUtil.setBoolean(R.string.preference_key_import_reading_lists_dialog_shown, value)
+
+    var importReadingListsData
+        get() = PrefsIoUtil.getString(R.string.preference_key_import_reading_lists_data, null)
+        set(value) = PrefsIoUtil.setString(R.string.preference_key_import_reading_lists_data, value)
+
+    var editSyntaxHighlightEnabled
+        get() = PrefsIoUtil.getBoolean(R.string.preference_key_edit_syntax_highlight, true)
+        set(value) = PrefsIoUtil.setBoolean(R.string.preference_key_edit_syntax_highlight, value)
+
+    var editMonoSpaceFontEnabled
+        get() = PrefsIoUtil.getBoolean(R.string.preference_key_edit_monospace_font, false)
+        set(value) = PrefsIoUtil.setBoolean(R.string.preference_key_edit_monospace_font, value)
+
+    var editLineNumbersEnabled
+        get() = PrefsIoUtil.getBoolean(R.string.preference_key_edit_line_numbers, false)
+        set(value) = PrefsIoUtil.setBoolean(R.string.preference_key_edit_line_numbers, value)
+
+    var editTypingSuggestionsEnabled
+        get() = PrefsIoUtil.getBoolean(R.string.preference_key_edit_typing_suggestions, true)
+        set(value) = PrefsIoUtil.setBoolean(R.string.preference_key_edit_typing_suggestions, value)
+
+    val useUrlShortenerForSharing
+        get() = PrefsIoUtil.getBoolean(R.string.preference_key_reading_lists_share_url_shorten, false)
+
+    var readingListShareSurveyAttempts
+        get() = PrefsIoUtil.getInt(R.string.preference_key_reading_lists_share_survey_attempts, 0)
+        set(value) = PrefsIoUtil.setInt(R.string.preference_key_reading_lists_share_survey_attempts, value)
+
+    var readingListShareSurveyMode
+        get() = PrefsIoUtil.getInt(R.string.preference_key_reading_lists_share_survey_mode, 0)
+        set(value) = PrefsIoUtil.setInt(R.string.preference_key_reading_lists_share_survey_mode, value)
+
+    var readingListShareTooltipShown
+        get() = PrefsIoUtil.getBoolean(R.string.preference_key_reading_lists_share_tooltip_shown, false)
+        set(value) = PrefsIoUtil.setBoolean(R.string.preference_key_reading_lists_share_tooltip_shown, value)
+
+    var readingListReceiveSurveyAttempts
+        get() = PrefsIoUtil.getInt(R.string.preference_key_reading_lists_receive_survey_attempts, 0)
+        set(value) = PrefsIoUtil.setInt(R.string.preference_key_reading_lists_receive_survey_attempts, value)
+
+    var readingListReceiveSurveyMode
+        get() = PrefsIoUtil.getInt(R.string.preference_key_reading_lists_receive_survey_mode, 0)
+        set(value) = PrefsIoUtil.setInt(R.string.preference_key_reading_lists_receive_survey_mode, value)
+
+    var readingListRecentReceivedTooltipShown
+        get() = PrefsIoUtil.getBoolean(R.string.preference_key_reading_lists_recent_receive_tooltip_shown, false)
+        set(value) = PrefsIoUtil.setBoolean(R.string.preference_key_reading_lists_recent_receive_tooltip_shown, value)
+
+    var readingListRecentReceivedId
+        get() = PrefsIoUtil.getLong(R.string.preference_key_reading_lists_recent_receive_id, -1)
+        set(value) = PrefsIoUtil.setLong(R.string.preference_key_reading_lists_recent_receive_id, value)
 }
