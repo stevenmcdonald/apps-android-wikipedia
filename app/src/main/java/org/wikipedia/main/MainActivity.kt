@@ -32,7 +32,7 @@ class MainActivity : SingleFragmentActivity<MainFragment>(), MainFragment.Callba
 
     private val TAG = "MainActivity"
 
-    private val DIRECT_URL = arrayListOf<String>("https://www.wikipedia.org/")
+    private val DIRECT_URL = arrayListOf<String>() // ("https://www.wikipedia.org/")
 
     // event logging
     private var eventHandler: EventHandler? = null
@@ -58,6 +58,10 @@ class MainActivity : SingleFragmentActivity<MainFragment>(), MainFragment.Callba
     private val listOfUrls = mutableListOf<String>()
     private val invalidUrls = mutableListOf<String>()
 
+    // TEMP - for debug menu
+    private val validServices = mutableListOf<String>()
+    private val invalidServices = mutableListOf<String>()
+
     private var waitingForEnvoy = false
 
     // this receiver should be triggered by a success or failure broadcast from either the
@@ -69,10 +73,20 @@ class MainActivity : SingleFragmentActivity<MainFragment>(), MainFragment.Callba
                 if (intent.action == ENVOY_BROADCAST_VALIDATION_SUCCEEDED) {
                     val validUrl = intent.getStringExtra(ENVOY_DATA_URL_SUCCEEDED)
                     val validService = intent.getStringExtra(ENVOY_DATA_SERVICE_SUCCEEDED)
+                    val validStrategy = intent.getIntExtra(ENVOY_DATA_STRATEGY_SUCCEEDED, 0)
+
+                    if (!validService.isNullOrEmpty()) {
+                        validServices.add(validService + "/" + validStrategy + " - " + validUrl)
+                        Prefs.validServices = validServices
+                    }
+
                     if (validUrl.isNullOrEmpty()) {
                         Log.e(TAG, "received a valid url that was empty or null")
+                    } else if (validStrategy == 0) {
+                        Log.d(TAG, "received a valid url with no strategy")
                     } else if (waitingForEnvoy) {
                         waitingForEnvoy = false
+                        Log.d(TAG, "received a valid url with strategy " + validStrategy)
                         // select the first url that is returned (assumed to have the lowest latency)
                         if (DIRECT_URL.contains(validUrl)) {
 
@@ -90,7 +104,7 @@ class MainActivity : SingleFragmentActivity<MainFragment>(), MainFragment.Callba
                             eventHandler?.logEvent(EVENT_TAG_SELECT, bundle)
 
                             Log.d(TAG, "found a valid url: " + validUrl + ", start engine")
-                            CronetNetworking.initializeCronetEngine(context, validUrl)
+                            CronetNetworking.initializeCronetEngine(context, validUrl, false, validStrategy)
 
                             if (fragment is MainFragment) {
                                 Log.d(TAG, "engine started, refresh main fragment")
@@ -111,6 +125,13 @@ class MainActivity : SingleFragmentActivity<MainFragment>(), MainFragment.Callba
                 } else if (intent.action == ENVOY_BROADCAST_VALIDATION_FAILED) {
                     val invalidUrl = intent.getStringExtra(ENVOY_DATA_URL_FAILED)
                     val invalidService = intent.getStringExtra(ENVOY_DATA_SERVICE_FAILED)
+                    val invalidStrategy = intent.getIntExtra(ENVOY_DATA_STRATEGY_FAILED, 0)
+
+                    if (!invalidService.isNullOrEmpty()) {
+                        invalidServices.add(invalidService + "/" + invalidStrategy + " - " + invalidUrl)
+                        Prefs.invalidServices = validServices
+                    }
+
                     if (invalidUrl.isNullOrEmpty()) {
                         Log.e(TAG, "received an invalid url that was empty or null")
                     } else {
@@ -149,6 +170,11 @@ class MainActivity : SingleFragmentActivity<MainFragment>(), MainFragment.Callba
 
         listOfUrls.clear()
         invalidUrls.clear()
+
+        validServices.clear()
+        Prefs.validServices = validServices
+        invalidServices.clear()
+        Prefs.invalidServices = invalidServices
 
         // secrets don't support fdroid package name
         val shortPackage = packageName.removeSuffix(".fdroid")

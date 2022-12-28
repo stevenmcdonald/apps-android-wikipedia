@@ -349,12 +349,12 @@ dependencies {
     androidTestUtil 'androidx.test:orchestrator:1.4.2'
 
     // switch to local files if needed to support development
-    // implementation files('libs/cronet-debug.aar')
-    // implementation files('libs/envoy-debug.aar')
+    implementation files('libs/cronet-debug.aar')
+    implementation files('libs/envoy-debug.aar')
     // implementation files('libs/IEnvoyProxy.aar')
     // use maven dependencies to support automation
-    implementation 'org.greatfire.envoy:cronet:102.0.5005.41'
-    implementation 'org.greatfire:envoy:102.0.5005.41.5'
+    // implementation 'org.greatfire.envoy:cronet:102.0.5005.41'
+    // implementation 'org.greatfire:envoy:102.0.5005.41.5'
     implementation 'org.greatfire:IEnvoyProxy:1.2.1'
 }
 

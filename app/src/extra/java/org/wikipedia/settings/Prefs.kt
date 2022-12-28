@@ -609,6 +609,16 @@ object Prefs {
         get() = PrefsIoUtil.getBoolean(R.string.preference_key_talk_topic_expand_all, true)
         set(value) = PrefsIoUtil.setBoolean(R.string.preference_key_talk_topic_expand_all, value)
 
+    var validServices
+        get() = JsonUtil.decodeFromString<List<String>>(PrefsIoUtil.getString(R.string.preference_key_valid_services, null))
+            ?: emptyList()
+        set(list) = PrefsIoUtil.setString(R.string.preference_key_valid_services, JsonUtil.encodeToString(list))
+
+    var invalidServices
+        get() = JsonUtil.decodeFromString<List<String>>(PrefsIoUtil.getString(R.string.preference_key_invalid_services, null))
+            ?: emptyList()
+        set(list) = PrefsIoUtil.setString(R.string.preference_key_invalid_services, JsonUtil.encodeToString(list))
+
     var userContribFilterExcludedNs
         get() = JsonUtil.decodeFromString<Set<Int>>(PrefsIoUtil.getString(R.string.preference_key_user_contrib_filter_excluded_ns, null))
                 ?: emptySet()

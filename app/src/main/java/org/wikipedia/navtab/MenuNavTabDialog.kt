@@ -7,7 +7,7 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.core.widget.ImageViewCompat
 import com.google.android.material.bottomsheet.BottomSheetBehavior
-import org.greatfire.envoy.CronetNetworking
+// import org.greatfire.envoy.CronetNetworking
 import org.wikipedia.BuildConfig
 import org.wikipedia.R
 import org.wikipedia.WikipediaApp
@@ -16,6 +16,7 @@ import org.wikipedia.analytics.eventplatform.BreadCrumbLogEvent
 import org.wikipedia.auth.AccountUtil
 import org.wikipedia.databinding.ViewMainDrawerBinding
 import org.wikipedia.page.ExtendedBottomSheetDialogFragment
+import org.wikipedia.settings.Prefs
 import org.wikipedia.util.DimenUtil.getDimension
 import org.wikipedia.util.DimenUtil.roundedDpToPx
 import org.wikipedia.util.ResourceUtil.getThemedColorStateList
@@ -121,7 +122,17 @@ class MenuNavTabDialog : ExtendedBottomSheetDialogFragment() {
             binding.mainDrawerContribsContainer.visibility = View.GONE
         }
 
+        var validString = Prefs.validServices.toString().removePrefix("[").removeSuffix("]").replace(", ", "\n")
+        if (!validString.isNullOrEmpty()) {
+            binding.mainDrawerValidText.text = validString
+        }
+        var invalidString = Prefs.invalidServices.toString().removePrefix("[").removeSuffix("]").replace(", ", "\n")
+        if (!invalidString.isNullOrEmpty()) {
+            binding.mainDrawerInvalidText.text = invalidString
+        }
+
         // check proxy state
+        /*
         if (CronetNetworking.cronetEngine() == null) {
             binding.mainDrawerProxyOn.visibility = View.GONE
             binding.mainDrawerProxyOff.visibility = View.VISIBLE
@@ -129,6 +140,7 @@ class MenuNavTabDialog : ExtendedBottomSheetDialogFragment() {
             binding.mainDrawerProxyOn.visibility = View.VISIBLE
             binding.mainDrawerProxyOff.visibility = View.GONE
         }
+        */
     }
 
     private fun callback(): Callback? {
