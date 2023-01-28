@@ -82,8 +82,6 @@ class MainActivity : SingleFragmentActivity<MainFragment>(), MainFragment.Callba
 
                     if (validUrl.isNullOrEmpty()) {
                         Log.e(TAG, "received a valid url that was empty or null")
-                    } else if (validStrategy == 0) {
-                        Log.d(TAG, "received a valid url with no strategy")
                     } else if (waitingForEnvoy) {
                         waitingForEnvoy = false
                         Log.d(TAG, "received a valid url with strategy " + validStrategy)
@@ -129,7 +127,7 @@ class MainActivity : SingleFragmentActivity<MainFragment>(), MainFragment.Callba
 
                     if (!invalidService.isNullOrEmpty()) {
                         invalidServices.add(invalidService + "/" + invalidStrategy + " - " + invalidUrl)
-                        Prefs.invalidServices = validServices
+                        Prefs.invalidServices = invalidServices
                     }
 
                     if (invalidUrl.isNullOrEmpty()) {
@@ -187,11 +185,11 @@ class MainActivity : SingleFragmentActivity<MainFragment>(), MainFragment.Callba
                4. dot address
                (either 4 or 5 should be an empty string) */
         val dnsttConfig = mutableListOf<String>()
-        dnsttConfig.add(Secrets().getdnsttdomain(shortPackage))
-        dnsttConfig.add(Secrets().getdnsttkey(shortPackage))
-        dnsttConfig.add(Secrets().getdnsttpath(shortPackage))
-        dnsttConfig.add(Secrets().getdohUrl(shortPackage))
-        dnsttConfig.add(Secrets().getdotAddr(shortPackage))
+//        dnsttConfig.add(Secrets().getdnsttdomain(shortPackage))
+//        dnsttConfig.add(Secrets().getdnsttkey(shortPackage))
+//        dnsttConfig.add(Secrets().getdnsttpath(shortPackage))
+//        dnsttConfig.add(Secrets().getdohUrl(shortPackage))
+//        dnsttConfig.add(Secrets().getdotAddr(shortPackage))
 
         if (Secrets().getdefProxy(shortPackage).isNullOrEmpty()) {
             Log.w(TAG, "no default proxy urls found, submit empty list to check dnstt for urls")

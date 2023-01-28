@@ -21,7 +21,7 @@ class Secrets {
 
     external fun getdnsttpath(packageName: String): String
 
-    external fun getdnsttkey(packageName: String): String
-
     external fun getdefProxy(packageName: String): String
+
+    external fun getdnsttkey(packageName: String): String
 }
