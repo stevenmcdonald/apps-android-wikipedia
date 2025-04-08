@@ -503,22 +503,30 @@ class MainActivity : SingleFragmentActivity<MainFragment>(), MainFragment.Callba
     }
 
     private fun checkAndInitEnvoy() {
-        if (Prefs.isInitialOnboardingEnabled) {
-            // TODO: onCreate also checks the following before onboarding, is that necessary here?
-            // savedInstanceState == null && !intent.hasExtra(Constants.INTENT_EXTRA_IMPORT_READING_LISTS
-            Log.d(TAG, "user is likely doing onboarding, don't try to start envoy")
-        } else if (envoyUnused) {
-            Log.d(TAG, "direct connection previously worked, don't try to start envoy")
-        } else if (CronetNetworking.cronetEngine() != null) {
-            Log.d(TAG, "cronet already running, don't try to start envoy again")
-        } else if (waitingForEnvoy) {
-            Log.d(TAG, "already processing urls, don't try to start envoy again")
-        } else {
-            // run envoy setup (fetches and validate urls)
-            Log.d(TAG, "start envoy to process urls")
-            waitingForEnvoy = true
-            envoyInit()
+
+        with(EnvoyNetworking) {
+            setTestUrl("https://www.wikipedia.org/", 200)
+//            setDirect("https://www.wikipedia.org/")
+            addEnvoyUrl("https://localhost/")
+            connect()
         }
+        
+//        if (Prefs.isInitialOnboardingEnabled) {
+//            // TODO: onCreate also checks the following before onboarding, is that necessary here?
+//            // savedInstanceState == null && !intent.hasExtra(Constants.INTENT_EXTRA_IMPORT_READING_LISTS
+//            Log.d(TAG, "user is likely doing onboarding, don't try to start envoy")
+//        } else if (envoyUnused) {
+//            Log.d(TAG, "direct connection previously worked, don't try to start envoy")
+//        } else if (CronetNetworking.cronetEngine() != null) {
+//            Log.d(TAG, "cronet already running, don't try to start envoy again")
+//        } else if (waitingForEnvoy) {
+//            Log.d(TAG, "already processing urls, don't try to start envoy again")
+//        } else {
+//            // run envoy setup (fetches and validate urls)
+//            Log.d(TAG, "start envoy to process urls")
+//            waitingForEnvoy = true
+//            envoyInit()
+//        }
     }
 
     override fun onStop() {
