@@ -504,10 +504,12 @@ class MainActivity : SingleFragmentActivity<MainFragment>(), MainFragment.Callba
 
     private fun checkAndInitEnvoy() {
 
+        Log.d(TAG, "Starting Envoy")
         with(EnvoyNetworking) {
             setTestUrl("https://www.wikipedia.org/", 200)
-//            setDirect("https://www.wikipedia.org/")
-            addEnvoyUrl("https://localhost/")
+            setDirectUrl("https://www.wikipedia.org/")
+            addEnvoyUrl("https://CHANGE ME BACK/wikipedia/")
+            addEnvoyUrl("hysteria2://BLAH BLAH/")
             connect()
         }
         
