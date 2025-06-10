@@ -36,6 +36,8 @@ import org.wikipedia.util.FeedbackUtil
 import org.wikipedia.util.ResourceUtil
 import org.wikipedia.views.DonorBadgeView
 
+import java.net.URI
+
 class MainActivity : SingleFragmentActivity<MainFragment>(), MainFragment.Callback {
 
     private val TAG = "MainActivity"
@@ -106,268 +108,268 @@ class MainActivity : SingleFragmentActivity<MainFragment>(), MainFragment.Callba
         }
     }
 
-    // this receiver should be triggered by a success or failure broadcast from the
-    // NetworkIntentService (indicating whether submitted urls were valid or invalid)
-    private val mBroadcastReceiver: BroadcastReceiver = object : BroadcastReceiver() {
-        override fun onReceive(context: Context?, intent: Intent?) {
-            if (intent != null && context != null) {
-                if (intent.action == ENVOY_BROADCAST_VALIDATION_SUCCEEDED) {
-                    val validUrl = intent.getStringExtra(ENVOY_DATA_URL_SUCCEEDED) ?: ""
-                    var validService = intent.getStringExtra(ENVOY_DATA_SERVICE_SUCCEEDED) ?: ""
-                    if (validUrl.startsWith(ENVOY_SERVICE_ENVOY) && validService.startsWith(ENVOY_SERVICE_HTTPS)) {
-                        validService = ENVOY_SERVICE_ENVOY
-                    }
-                    val sanitizedUrl = UrlUtil.sanitizeUrl(validUrl, validService)
-
-                    // populate debug menu
-                    if (BuildConfig.BUILD_TYPE == "debug" && !validService.isNullOrEmpty()) {
-                        validServices.add(validService + " - " + sanitizedUrl)
-                        Prefs.validServices = validServices
-                    }
-
-                    if (validUrl.isNullOrEmpty()) {
-                        Log.e(TAG, "received a valid url that was empty or null")
-                    } else if (waitingForEnvoy) {
-                        // select the first valid url that is received (assumed to have the lowest latency)
-                        waitingForEnvoy = false
-
-                        // record the validation time of the first valid url received
-                        val validationMs = intent.getLongExtra(ENVOY_DATA_VALIDATION_MS, 0L)
-                        if (validationMs <= 0L) {
-                            Log.e(TAG, "received an envoy validation succeeded broadcast with an invalid duration")
-                        } else {
-                            var validationSeconds: Long = validationMs / 1000L
-
-                            // round up small values
-                            if (validationSeconds < 1) {
-                                validationSeconds = 1
-                            }
-
-                            //val bundle = Bundle()
-                            //bundle.putLong(EVENT_PARAM_VALIDATION_SECONDS, validationSeconds)
-                            //eventHandler?.logEvent(EVENT_TAG_VALIDATION_TIME, bundle)
-                        }
-
-                        //val bundle = Bundle()
-                        //bundle.putString(EVENT_PARAM_SELECT_URL, sanitizedUrl)
-                        //bundle.putString(EVENT_PARAM_SELECT_SERVICE, validService)
-                        //eventHandler?.logEvent(EVENT_TAG_SELECT, bundle)
-
-                        if (DIRECT_URL.contains(validUrl)) {
-
-                            Log.d(TAG, "received a direct url: " + sanitizedUrl + ", don't need to start engine")
-
-                            // set flag so resuming activity doesn't trigger another envoy check
-                            envoyUnused = true
-                        } else {
-
-                            Log.d(TAG, "received a valid url: " + sanitizedUrl + ", start engine")
-                            CronetNetworking.initializeCronetEngine(context, validUrl)
-
-                            if (fragment is MainFragment) {
-                                Log.d(TAG, "engine started, refresh main fragment")
-                                fragment.refreshFragment()
-                            } else {
-                                Log.d(TAG, "unexpected fragment class, can't refresh")
-                            }
-                        }
-                    } else {
-
-                        //val bundle = Bundle()
-                        //bundle.putString(EVENT_PARAM_VALID_URL, sanitizedUrl)
-                        //bundle.putString(EVENT_PARAM_VALID_SERVICE, validService)
-                        //eventHandler?.logEvent(EVENT_TAG_VALID, bundle)
-
-                        Log.d(TAG, "already received a valid url, ignore additional valid url: " + sanitizedUrl)
-                    }
-                } else if (intent.action == ENVOY_BROADCAST_VALIDATION_FAILED) {
-                    val invalidUrl = intent.getStringExtra(ENVOY_DATA_URL_FAILED) ?: ""
-                    var invalidService = intent.getStringExtra(ENVOY_DATA_SERVICE_FAILED) ?: ""
-                    if (invalidUrl.startsWith(ENVOY_SERVICE_ENVOY) && invalidService.startsWith(ENVOY_SERVICE_HTTPS)) {
-                        invalidService = ENVOY_SERVICE_ENVOY
-                    }
-                    val sanitizedUrl = UrlUtil.sanitizeUrl(invalidUrl, invalidService)
-
-                    // populate debug menu
-                    if (BuildConfig.BUILD_TYPE == "debug" && !invalidService.isNullOrEmpty()) {
-                        invalidServices.add(invalidService + " - " + sanitizedUrl)
-                        Prefs.invalidServices = invalidServices
-                    }
-
-                    if (invalidUrl.isNullOrEmpty()) {
-                        Log.e(TAG, "received an invalid url that was empty or null")
-                    } else {
-
-                        //val bundle = Bundle()
-                        //bundle.putString(EVENT_PARAM_INVALID_URL, sanitizedUrl)
-                        //bundle.putString(EVENT_PARAM_INVALID_SERVICE, invalidService)
-                        //eventHandler?.logEvent(EVENT_TAG_INVALID, bundle)
-
-                        Log.d(TAG, "received an invalid url: " + sanitizedUrl)
-                    }
-                } else if (intent.action == ENVOY_BROADCAST_BATCH_SUCCEEDED) {
-                    val urlBatch = intent.getStringArrayListExtra(ENVOY_DATA_URL_LIST)
-                    val serviceBatch = intent.getStringArrayListExtra(ENVOY_DATA_SERVICE_LIST)
-                    if (urlBatch.isNullOrEmpty() || serviceBatch.isNullOrEmpty()) {
-                        Log.e(TAG, "received an envoy batch succeeded broadcast with no urls/services")
-                    } else {
-                        // may be redundant, direct urls should not be included in batch
-                        urlBatch.removeAll(DIRECT_URL)
-
-                        //val bundle = Bundle()
-                        // parameter limit is 100 characters, arrays not allowed
-                        //bundle.putString(
-                        //    EVENT_PARAM_VALID_URLS,
-                        //    UrlUtil.sanitizeUrlList(urlBatch, serviceBatch)
-                        //)
-                        //bundle.putString(
-                        //    EVENT_PARAM_VALID_SERVICES,
-                        //    UrlUtil.sanitizeServiceList(serviceBatch)
-                        //)
-                        //eventHandler?.logEvent(EVENT_TAG_VALID_BATCH, bundle)
-                    }
-                } else if (intent.action == ENVOY_BROADCAST_BATCH_FAILED) {
-                    val urlBatch = intent.getStringArrayListExtra(ENVOY_DATA_URL_LIST)
-                    val serviceBatch = intent.getStringArrayListExtra(ENVOY_DATA_SERVICE_LIST)
-                    if (urlBatch.isNullOrEmpty() || serviceBatch.isNullOrEmpty()) {
-                        Log.e(TAG, "received an envoy batch failed broadcast with no urls/services")
-                    } else {
-                        // may be redundant, direct urls should not be included in batch
-                        urlBatch.removeAll(DIRECT_URL)
-
-                        //val bundle = Bundle()
-                        // parameter limit is 100 characters, arrays not allowed
-                        //bundle.putString(
-                        //    EVENT_PARAM_INVALID_URLS,
-                        //    UrlUtil.sanitizeUrlList(urlBatch, serviceBatch)
-                        //)
-                        //bundle.putString(
-                        //    EVENT_PARAM_INVALID_SERVICES,
-                        //    UrlUtil.sanitizeServiceList(serviceBatch)
-                        //)
-                        //eventHandler?.logEvent(EVENT_TAG_INVALID_BATCH, bundle)
-                    }
-                } else if (intent.action == ENVOY_BROADCAST_UPDATE_SUCCEEDED) {
-                    //val bundle = Bundle()
-                    val url = intent.getStringExtra(ENVOY_DATA_UPDATE_URL)
-
-                    val msg = intent.getStringExtra(ENVOY_DATA_UPDATE_STATUS) ?: "null successful update message"
-                    Log.d(TAG, "got successful update status: " + msg)
-                    var status = ""
-
-                    if (url.isNullOrEmpty()) {
-                        Log.e(TAG, "received an envoy update succeeded broadcast with no url")
-                        status = status + "got update: "
-                    } else {
-                        val sanitizedUrl = UrlUtil.sanitizeUrl(url, ENVOY_SERVICE_UPDATE)
-                        Log.d(TAG, "envoy update succeeded for url: " + sanitizedUrl)
-                        //bundle.putString(EVENT_PARAM_UPDATE_SUCCEEDED_URL, sanitizedUrl)
-                        status = status + "got update from " + sanitizedUrl + ": "
-                    }
-                    val extraUrls = intent.getStringArrayListExtra(ENVOY_DATA_UPDATE_LIST)
-                    if (extraUrls.isNullOrEmpty()) {
-                        Log.e(TAG, "received an envoy update succeeded broadcast with no list")
-                        status = status + "no urls"
-                    } else {
-                        //bundle.putInt(EVENT_PARAM_UPDATE_SUCCEEDED_COUNT, extraUrls.size)
-                        status = status + extraUrls.size + " urls"
-                    }
-                    //eventHandler?.logEvent(EVENT_TAG_UPDATE_SUCCEEDED, bundle)
-                    updateMessages.add(status)
-                    Prefs.updateMessages = updateMessages
-                } else if (intent.action == ENVOY_BROADCAST_UPDATE_FAILED) {
-                    //val bundle = Bundle()
-                    val url = intent.getStringExtra(ENVOY_DATA_UPDATE_URL)
-
-                    val msg = intent.getStringExtra(ENVOY_DATA_UPDATE_STATUS) ?: "null failed update message"
-                    Log.d(TAG, "got failed update status: " + msg)
-                    updateMessages.add(msg)
-                    Prefs.updateMessages = updateMessages
-
-                    if (url.isNullOrEmpty()) {
-                        Log.e(TAG, "received an envoy update failed broadcast with no url")
-                    } else {
-                        val sanitizedUrl = UrlUtil.sanitizeUrl(url, ENVOY_SERVICE_UPDATE)
-                        Log.d(TAG, "envoy update failed for url: " + sanitizedUrl)
-                        //bundle.putString(EVENT_PARAM_UPDATE_FAILED_URL, sanitizedUrl)
-                    }
-                    //eventHandler?.logEvent(EVENT_TAG_UPDATE_FAILED, bundle)
-                } else if (intent.action == ENVOY_BROADCAST_VALIDATION_CONTINUED) {
-                    Log.d(TAG, "received an envoy continuation broadcast")
-                    //val bundle = Bundle()
-                    //eventHandler?.logEvent(EVENT_TAG_CONTINUED, bundle)
-                } else if (intent.action == ENVOY_BROADCAST_VALIDATION_ENDED) {
-                    Log.e(TAG, "received an envoy validation ended broadcast")
-
-                    waitingForEnvoy = false
-
-                    val validationMs = intent.getLongExtra(ENVOY_DATA_VALIDATION_MS, 0L)
-                    if (validationMs <= 0L) {
-                        Log.e(TAG, "received an envoy validation ended broadcast with an invalid duration")
-                    } else {
-                        var validationSeconds: Long = validationMs / 1000L
-
-                        // round up small values
-                        if (validationSeconds < 1) {
-                            validationSeconds = 1
-                        }
-
-                        //val bundle = Bundle()
-                        //bundle.putLong(EVENT_PARAM_VALIDATION_SECONDS, validationSeconds)
-                        //eventHandler?.logEvent(EVENT_TAG_VALIDATION_TIME, bundle)
-                    }
-
-                    val cause = intent.getStringExtra(ENVOY_DATA_VALIDATION_ENDED_CAUSE)
-                    if (cause.isNullOrEmpty()) {
-                        Log.e(TAG, "received an envoy validation ended broadcast with an invalid cause")
-                    } else {
-                        //val bundle = Bundle()
-                        //bundle.putString(EVENT_PARAM_VALIDATION_ENDED_CAUSE, cause)
-                        //eventHandler?.logEvent(EVENT_TAG_VALIDATION_ENDED, bundle)
-
-                        // display dialog to allow user to retry if possible
-                        if (envoyUnused == true) {
-                            Log.w(TAG, "envoy failed, but direct connection worked")
-                        } else if (cause.equals(ENVOY_ENDED_EMPTY)) {
-                            Log.w(TAG, "envoy failed, but no urls were submitted")
-                        } else if (cause.equals(ENVOY_ENDED_FAILED) || cause.equals(ENVOY_ENDED_BLOCKED)) {
-                            Log.w(TAG, "envoy failed, all urls failed or were previously blocked")
-                            if (retryDialog != null) {
-                                Log.w(TAG, "dialog already awaiting response")
-                            } else {
-                                retryDialog = AlertDialog.Builder(this@MainActivity)
-                                    .setTitle(R.string.failure_dialog_title)
-                                    .setMessage(R.string.failure_dialog_content)
-                                    .setNegativeButton(R.string.failure_dialog_button_close, cancelListener)
-                                    .create()
-                                retryDialog?.show()
-                            }
-                        } else if (cause.equals(ENVOY_ENDED_TIMEOUT)) {
-                            Log.w(TAG, "envoy failed, but not all urls were tested")
-                            if (retryDialog != null) {
-                                Log.w(TAG, "dialog already awaiting response")
-                            } else {
-                                retryDialog = AlertDialog.Builder(this@MainActivity)
-                                    .setTitle(R.string.retry_dialog_title)
-                                    .setMessage(R.string.retry_dialog_content)
-                                    .setPositiveButton(R.string.retry_dialog_button_retry, retryListener)
-                                    .setNegativeButton(R.string.retry_dialog_button_close, cancelListener)
-                                    .create()
-                                retryDialog?.show()
-                            }
-                        } else {
-                            // ENVOY_ENDED_UNKNOWN or other cause
-                            Log.w(TAG, "envoy failed, cause unclear")
-                        }
-                    }
-                } else {
-                    Log.e(TAG, "received an unexpected intent: " + intent.action)
-                }
-            } else {
-                Log.e(TAG, "receiver triggered but context or intent was null")
-            }
-        }
-    }
+//    // this receiver should be triggered by a success or failure broadcast from the
+//    // NetworkIntentService (indicating whether submitted urls were valid or invalid)
+//    private val mBroadcastReceiver: BroadcastReceiver = object : BroadcastReceiver() {
+//        override fun onReceive(context: Context?, intent: Intent?) {
+//            if (intent != null && context != null) {
+//                if (intent.action == ENVOY_BROADCAST_VALIDATION_SUCCEEDED) {
+//                    val validUrl = intent.getStringExtra(ENVOY_DATA_URL_SUCCEEDED) ?: ""
+//                    var validService = intent.getStringExtra(ENVOY_DATA_SERVICE_SUCCEEDED) ?: ""
+//                    if (validUrl.startsWith(ENVOY_SERVICE_ENVOY) && validService.startsWith(ENVOY_SERVICE_HTTPS)) {
+//                        validService = ENVOY_SERVICE_ENVOY
+//                    }
+//                    val sanitizedUrl = UrlUtil.sanitizeUrl(validUrl, validService)
+//
+//                    // populate debug menu
+//                    if (BuildConfig.BUILD_TYPE == "debug" && !validService.isNullOrEmpty()) {
+//                        validServices.add(validService + " - " + sanitizedUrl)
+//                        Prefs.validServices = validServices
+//                    }
+//
+//                    if (validUrl.isNullOrEmpty()) {
+//                        Log.e(TAG, "received a valid url that was empty or null")
+//                    } else if (waitingForEnvoy) {
+//                        // select the first valid url that is received (assumed to have the lowest latency)
+//                        waitingForEnvoy = false
+//
+//                        // record the validation time of the first valid url received
+//                        val validationMs = intent.getLongExtra(ENVOY_DATA_VALIDATION_MS, 0L)
+//                        if (validationMs <= 0L) {
+//                            Log.e(TAG, "received an envoy validation succeeded broadcast with an invalid duration")
+//                        } else {
+//                            var validationSeconds: Long = validationMs / 1000L
+//
+//                            // round up small values
+//                            if (validationSeconds < 1) {
+//                                validationSeconds = 1
+//                            }
+//
+//                            //val bundle = Bundle()
+//                            //bundle.putLong(EVENT_PARAM_VALIDATION_SECONDS, validationSeconds)
+//                            //eventHandler?.logEvent(EVENT_TAG_VALIDATION_TIME, bundle)
+//                        }
+//
+//                        //val bundle = Bundle()
+//                        //bundle.putString(EVENT_PARAM_SELECT_URL, sanitizedUrl)
+//                        //bundle.putString(EVENT_PARAM_SELECT_SERVICE, validService)
+//                        //eventHandler?.logEvent(EVENT_TAG_SELECT, bundle)
+//
+//                        if (DIRECT_URL.contains(validUrl)) {
+//
+//                            Log.d(TAG, "received a direct url: " + sanitizedUrl + ", don't need to start engine")
+//
+//                            // set flag so resuming activity doesn't trigger another envoy check
+//                            envoyUnused = true
+//                        } else {
+//
+//                            Log.d(TAG, "received a valid url: " + sanitizedUrl + ", start engine")
+//                            CronetNetworking.initializeCronetEngine(context, validUrl)
+//
+//                            if (fragment is MainFragment) {
+//                                Log.d(TAG, "engine started, refresh main fragment")
+//                                fragment.refreshFragment()
+//                            } else {
+//                                Log.d(TAG, "unexpected fragment class, can't refresh")
+//                            }
+//                        }
+//                    } else {
+//
+//                        //val bundle = Bundle()
+//                        //bundle.putString(EVENT_PARAM_VALID_URL, sanitizedUrl)
+//                        //bundle.putString(EVENT_PARAM_VALID_SERVICE, validService)
+//                        //eventHandler?.logEvent(EVENT_TAG_VALID, bundle)
+//
+//                        Log.d(TAG, "already received a valid url, ignore additional valid url: " + sanitizedUrl)
+//                    }
+//                } else if (intent.action == ENVOY_BROADCAST_VALIDATION_FAILED) {
+//                    val invalidUrl = intent.getStringExtra(ENVOY_DATA_URL_FAILED) ?: ""
+//                    var invalidService = intent.getStringExtra(ENVOY_DATA_SERVICE_FAILED) ?: ""
+//                    if (invalidUrl.startsWith(ENVOY_SERVICE_ENVOY) && invalidService.startsWith(ENVOY_SERVICE_HTTPS)) {
+//                        invalidService = ENVOY_SERVICE_ENVOY
+//                    }
+//                    val sanitizedUrl = UrlUtil.sanitizeUrl(invalidUrl, invalidService)
+//
+//                    // populate debug menu
+//                    if (BuildConfig.BUILD_TYPE == "debug" && !invalidService.isNullOrEmpty()) {
+//                        invalidServices.add(invalidService + " - " + sanitizedUrl)
+//                        Prefs.invalidServices = invalidServices
+//                    }
+//
+//                    if (invalidUrl.isNullOrEmpty()) {
+//                        Log.e(TAG, "received an invalid url that was empty or null")
+//                    } else {
+//
+//                        //val bundle = Bundle()
+//                        //bundle.putString(EVENT_PARAM_INVALID_URL, sanitizedUrl)
+//                        //bundle.putString(EVENT_PARAM_INVALID_SERVICE, invalidService)
+//                        //eventHandler?.logEvent(EVENT_TAG_INVALID, bundle)
+//
+//                        Log.d(TAG, "received an invalid url: " + sanitizedUrl)
+//                    }
+//                } else if (intent.action == ENVOY_BROADCAST_BATCH_SUCCEEDED) {
+//                    val urlBatch = intent.getStringArrayListExtra(ENVOY_DATA_URL_LIST)
+//                    val serviceBatch = intent.getStringArrayListExtra(ENVOY_DATA_SERVICE_LIST)
+//                    if (urlBatch.isNullOrEmpty() || serviceBatch.isNullOrEmpty()) {
+//                        Log.e(TAG, "received an envoy batch succeeded broadcast with no urls/services")
+//                    } else {
+//                        // may be redundant, direct urls should not be included in batch
+//                        urlBatch.removeAll(DIRECT_URL)
+//
+//                        //val bundle = Bundle()
+//                        // parameter limit is 100 characters, arrays not allowed
+//                        //bundle.putString(
+//                        //    EVENT_PARAM_VALID_URLS,
+//                        //    UrlUtil.sanitizeUrlList(urlBatch, serviceBatch)
+//                        //)
+//                        //bundle.putString(
+//                        //    EVENT_PARAM_VALID_SERVICES,
+//                        //    UrlUtil.sanitizeServiceList(serviceBatch)
+//                        //)
+//                        //eventHandler?.logEvent(EVENT_TAG_VALID_BATCH, bundle)
+//                    }
+//                } else if (intent.action == ENVOY_BROADCAST_BATCH_FAILED) {
+//                    val urlBatch = intent.getStringArrayListExtra(ENVOY_DATA_URL_LIST)
+//                    val serviceBatch = intent.getStringArrayListExtra(ENVOY_DATA_SERVICE_LIST)
+//                    if (urlBatch.isNullOrEmpty() || serviceBatch.isNullOrEmpty()) {
+//                        Log.e(TAG, "received an envoy batch failed broadcast with no urls/services")
+//                    } else {
+//                        // may be redundant, direct urls should not be included in batch
+//                        urlBatch.removeAll(DIRECT_URL)
+//
+//                        //val bundle = Bundle()
+//                        // parameter limit is 100 characters, arrays not allowed
+//                        //bundle.putString(
+//                        //    EVENT_PARAM_INVALID_URLS,
+//                        //    UrlUtil.sanitizeUrlList(urlBatch, serviceBatch)
+//                        //)
+//                        //bundle.putString(
+//                        //    EVENT_PARAM_INVALID_SERVICES,
+//                        //    UrlUtil.sanitizeServiceList(serviceBatch)
+//                        //)
+//                        //eventHandler?.logEvent(EVENT_TAG_INVALID_BATCH, bundle)
+//                    }
+//                } else if (intent.action == ENVOY_BROADCAST_UPDATE_SUCCEEDED) {
+//                    //val bundle = Bundle()
+//                    val url = intent.getStringExtra(ENVOY_DATA_UPDATE_URL)
+//
+//                    val msg = intent.getStringExtra(ENVOY_DATA_UPDATE_STATUS) ?: "null successful update message"
+//                    Log.d(TAG, "got successful update status: " + msg)
+//                    var status = ""
+//
+//                    if (url.isNullOrEmpty()) {
+//                        Log.e(TAG, "received an envoy update succeeded broadcast with no url")
+//                        status = status + "got update: "
+//                    } else {
+//                        val sanitizedUrl = UrlUtil.sanitizeUrl(url, ENVOY_SERVICE_UPDATE)
+//                        Log.d(TAG, "envoy update succeeded for url: " + sanitizedUrl)
+//                        //bundle.putString(EVENT_PARAM_UPDATE_SUCCEEDED_URL, sanitizedUrl)
+//                        status = status + "got update from " + sanitizedUrl + ": "
+//                    }
+//                    val extraUrls = intent.getStringArrayListExtra(ENVOY_DATA_UPDATE_LIST)
+//                    if (extraUrls.isNullOrEmpty()) {
+//                        Log.e(TAG, "received an envoy update succeeded broadcast with no list")
+//                        status = status + "no urls"
+//                    } else {
+//                        //bundle.putInt(EVENT_PARAM_UPDATE_SUCCEEDED_COUNT, extraUrls.size)
+//                        status = status + extraUrls.size + " urls"
+//                    }
+//                    //eventHandler?.logEvent(EVENT_TAG_UPDATE_SUCCEEDED, bundle)
+//                    updateMessages.add(status)
+//                    Prefs.updateMessages = updateMessages
+//                } else if (intent.action == ENVOY_BROADCAST_UPDATE_FAILED) {
+//                    //val bundle = Bundle()
+//                    val url = intent.getStringExtra(ENVOY_DATA_UPDATE_URL)
+//
+//                    val msg = intent.getStringExtra(ENVOY_DATA_UPDATE_STATUS) ?: "null failed update message"
+//                    Log.d(TAG, "got failed update status: " + msg)
+//                    updateMessages.add(msg)
+//                    Prefs.updateMessages = updateMessages
+//
+//                    if (url.isNullOrEmpty()) {
+//                        Log.e(TAG, "received an envoy update failed broadcast with no url")
+//                    } else {
+//                        val sanitizedUrl = UrlUtil.sanitizeUrl(url, ENVOY_SERVICE_UPDATE)
+//                        Log.d(TAG, "envoy update failed for url: " + sanitizedUrl)
+//                        //bundle.putString(EVENT_PARAM_UPDATE_FAILED_URL, sanitizedUrl)
+//                    }
+//                    //eventHandler?.logEvent(EVENT_TAG_UPDATE_FAILED, bundle)
+//                } else if (intent.action == ENVOY_BROADCAST_VALIDATION_CONTINUED) {
+//                    Log.d(TAG, "received an envoy continuation broadcast")
+//                    //val bundle = Bundle()
+//                    //eventHandler?.logEvent(EVENT_TAG_CONTINUED, bundle)
+//                } else if (intent.action == ENVOY_BROADCAST_VALIDATION_ENDED) {
+//                    Log.e(TAG, "received an envoy validation ended broadcast")
+//
+//                    waitingForEnvoy = false
+//
+//                    val validationMs = intent.getLongExtra(ENVOY_DATA_VALIDATION_MS, 0L)
+//                    if (validationMs <= 0L) {
+//                        Log.e(TAG, "received an envoy validation ended broadcast with an invalid duration")
+//                    } else {
+//                        var validationSeconds: Long = validationMs / 1000L
+//
+//                        // round up small values
+//                        if (validationSeconds < 1) {
+//                            validationSeconds = 1
+//                        }
+//
+//                        //val bundle = Bundle()
+//                        //bundle.putLong(EVENT_PARAM_VALIDATION_SECONDS, validationSeconds)
+//                        //eventHandler?.logEvent(EVENT_TAG_VALIDATION_TIME, bundle)
+//                    }
+//
+//                    val cause = intent.getStringExtra(ENVOY_DATA_VALIDATION_ENDED_CAUSE)
+//                    if (cause.isNullOrEmpty()) {
+//                        Log.e(TAG, "received an envoy validation ended broadcast with an invalid cause")
+//                    } else {
+//                        //val bundle = Bundle()
+//                        //bundle.putString(EVENT_PARAM_VALIDATION_ENDED_CAUSE, cause)
+//                        //eventHandler?.logEvent(EVENT_TAG_VALIDATION_ENDED, bundle)
+//
+//                        // display dialog to allow user to retry if possible
+//                        if (envoyUnused == true) {
+//                            Log.w(TAG, "envoy failed, but direct connection worked")
+//                        } else if (cause.equals(ENVOY_ENDED_EMPTY)) {
+//                            Log.w(TAG, "envoy failed, but no urls were submitted")
+//                        } else if (cause.equals(ENVOY_ENDED_FAILED) || cause.equals(ENVOY_ENDED_BLOCKED)) {
+//                            Log.w(TAG, "envoy failed, all urls failed or were previously blocked")
+//                            if (retryDialog != null) {
+//                                Log.w(TAG, "dialog already awaiting response")
+//                            } else {
+//                                retryDialog = AlertDialog.Builder(this@MainActivity)
+//                                    .setTitle(R.string.failure_dialog_title)
+//                                    .setMessage(R.string.failure_dialog_content)
+//                                    .setNegativeButton(R.string.failure_dialog_button_close, cancelListener)
+//                                    .create()
+//                                retryDialog?.show()
+//                            }
+//                        } else if (cause.equals(ENVOY_ENDED_TIMEOUT)) {
+//                            Log.w(TAG, "envoy failed, but not all urls were tested")
+//                            if (retryDialog != null) {
+//                                Log.w(TAG, "dialog already awaiting response")
+//                            } else {
+//                                retryDialog = AlertDialog.Builder(this@MainActivity)
+//                                    .setTitle(R.string.retry_dialog_title)
+//                                    .setMessage(R.string.retry_dialog_content)
+//                                    .setPositiveButton(R.string.retry_dialog_button_retry, retryListener)
+//                                    .setNegativeButton(R.string.retry_dialog_button_close, cancelListener)
+//                                    .create()
+//                                retryDialog?.show()
+//                            }
+//                        } else {
+//                            // ENVOY_ENDED_UNKNOWN or other cause
+//                            Log.w(TAG, "envoy failed, cause unclear")
+//                        }
+//                    }
+//                } else {
+//                    Log.e(TAG, "received an unexpected intent: " + intent.action)
+//                }
+//            } else {
+//                Log.e(TAG, "receiver triggered but context or intent was null")
+//            }
+//        }
+//    }
 
     override fun inflateAndSetContentView() {
         binding = ActivityMainBinding.inflate(layoutInflater)
@@ -478,19 +480,19 @@ class MainActivity : SingleFragmentActivity<MainFragment>(), MainFragment.Callba
     override fun onStart() {
         super.onStart()
 
-        // moved to start/stop to avoid an issue with registering multiple instances of the receiver when app is swiped away
-        Log.d(TAG, "start/register broadcast receiver")
-        // register to receive test results
-        LocalBroadcastManager.getInstance(this).registerReceiver(mBroadcastReceiver, IntentFilter().apply {
-            addAction(ENVOY_BROADCAST_VALIDATION_SUCCEEDED)
-            addAction(ENVOY_BROADCAST_VALIDATION_FAILED)
-            addAction(ENVOY_BROADCAST_BATCH_SUCCEEDED)
-            addAction(ENVOY_BROADCAST_BATCH_FAILED)
-            addAction(ENVOY_BROADCAST_UPDATE_SUCCEEDED)
-            addAction(ENVOY_BROADCAST_UPDATE_FAILED)
-            addAction(ENVOY_BROADCAST_VALIDATION_CONTINUED)
-            addAction(ENVOY_BROADCAST_VALIDATION_ENDED)
-        })
+//        // moved to start/stop to avoid an issue with registering multiple instances of the receiver when app is swiped away
+//        Log.d(TAG, "start/register broadcast receiver")
+//        // register to receive test results
+//        LocalBroadcastManager.getInstance(this).registerReceiver(mBroadcastReceiver, IntentFilter().apply {
+//            addAction(ENVOY_BROADCAST_VALIDATION_SUCCEEDED)
+//            addAction(ENVOY_BROADCAST_VALIDATION_FAILED)
+//            addAction(ENVOY_BROADCAST_BATCH_SUCCEEDED)
+//            addAction(ENVOY_BROADCAST_BATCH_FAILED)
+//            addAction(ENVOY_BROADCAST_UPDATE_SUCCEEDED)
+//            addAction(ENVOY_BROADCAST_UPDATE_FAILED)
+//            addAction(ENVOY_BROADCAST_VALIDATION_CONTINUED)
+//            addAction(ENVOY_BROADCAST_VALIDATION_ENDED)
+//        })
     }
 
     override fun onResume() {
@@ -502,15 +504,51 @@ class MainActivity : SingleFragmentActivity<MainFragment>(), MainFragment.Callba
         invalidateOptionsMenu()
     }
 
+    private val tempCallback: EnvoyTestCallback = object : EnvoyTestCallback{
+        override fun reportTestFailure(
+            testedUri: String,
+            testedService: EnvoyServiceType,
+            timeElapsed: Long
+        ) {
+            Log.d("EnvoyTempCallback", "reportUrlFailure: " + testedUri.toString())
+        }
+
+        override fun reportTestSuccess(
+            testedUri: String,
+            testedService: EnvoyServiceType,
+            timeElapsed: Long
+        ) {
+            Log.d("EnvoyTempCallback", "reportUrlSuccess: " + testedUri.toString())
+        }
+
+        override fun reportTestBlocked(testedUrl: String, testedService: EnvoyServiceType) {
+            Log.d("EnvoyTempCallback", "reportTestBlocked: " + testedUrl.toString())
+        }
+
+        override fun reportOverallStatus(testStatus: EnvoyTestStatus, timeElapsed: Long) {
+            Log.d("EnvoyTempCallback", "reportOverallStatus: $testStatus")
+        }
+    }
+
     private fun checkAndInitEnvoy() {
 
-        Log.d(TAG, "Starting Envoy")
-        with(EnvoyNetworking) {
-            setTestUrl("https://www.wikipedia.org/", 200)
-            setDirectUrl("https://www.wikipedia.org/")
-            addEnvoyUrl("https://CHANGE ME BACK/wikipedia/")
-            addEnvoyUrl("hysteria2://BLAH BLAH/")
-            connect()
+        val tempContext = this
+
+        Log.w(TAG, "Starting Envoy")
+        // disable this for testing
+        EnvoyNetworking.passivelyTestDirect = false
+        if (!EnvoyNetworking.initialized) {
+            val envoy = EnvoyNetworking()
+            with(envoy) {
+//            setTestUrl("https://meta.wikimedia.org/", 200)
+//            setDirectUrl("https://www.wikipedia.org/")
+                addEnvoyUrl("masque://masque.smcdonald.us:4443/")
+//                addEnvoyUrl("masque://127.0.0.1:27630")
+                setCallback(tempCallback)
+                setContext(tempContext)
+//                DEBUGsetTimeoutDirect(true)
+                connect()
+            }
         }
         
 //        if (Prefs.isInitialOnboardingEnabled) {
@@ -535,9 +573,9 @@ class MainActivity : SingleFragmentActivity<MainFragment>(), MainFragment.Callba
         super.onStop()
 
         // moved to start/stop to avoid an issue with registering multiple instances of the receiver when app is swiped away
-        Log.d(TAG, "stop/unregister broadcast receiver")
+//        Log.d(TAG, "stop/unregister broadcast receiver")
         // unregister receiver for test results
-        LocalBroadcastManager.getInstance(this).unregisterReceiver(mBroadcastReceiver)
+//        LocalBroadcastManager.getInstance(this).unregisterReceiver(mBroadcastReceiver)
     }
 
     override fun createFragment(): MainFragment {

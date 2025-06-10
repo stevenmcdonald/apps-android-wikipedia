@@ -288,11 +288,14 @@ dependencies {
     androidTestImplementation libs.room.testing
     androidTestUtil libs.androidx.orchestrator
 
+    implementation 'tech.relaycorp:doh:1.0.70'
+
     // switch to local files if needed to support development
     // implementation files('libs/cronet-debug.aar')
     implementation files('libs/envoy-debug.aar')
-    // implementation files('libs/IEnvoyProxy.aar')
-    implementation files('libs/plenipotentiary.aar')
+     implementation files('libs/IEnvoyProxy.aar')
+//    implementation files('libs/plenipotentiary.aar')
+//    implementation files('libs/Emissary.aar')
     // use maven dependencies to support automation
     implementation 'org.greatfire.envoy:cronet:108.0.5359.195'
     //implementation 'org.greatfire:envoy:107.0.5304.150.5'
