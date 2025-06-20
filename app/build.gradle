@@ -44,7 +44,7 @@ android {
 
     defaultConfig {
         applicationId 'org.greatfire.wikiunblocked'
-        minSdk 21
+        minSdk 26
         targetSdk 35
         versionName "5.0"
         versionCode 100500
@@ -289,6 +289,12 @@ dependencies {
     androidTestUtil libs.androidx.orchestrator
 
     implementation 'tech.relaycorp:doh:1.0.70'
+//    implementation 'com.github.flohealth:ok-ohttp-plugin:0.2.0'
+    implementation files('libs/lib-ohttp-plugin-release.aar')
+    implementation files('libs/lib-bhttp.jar')
+    implementation files('libs/ok-ohttp-encapsulator-release.aar')
+
+
 
     // switch to local files if needed to support development
     // implementation files('libs/cronet-debug.aar')

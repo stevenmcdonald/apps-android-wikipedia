@@ -533,7 +533,7 @@ class MainActivity : SingleFragmentActivity<MainFragment>(), MainFragment.Callba
     private fun checkAndInitEnvoy() {
 
         val tempContext = this
-
+/*
         Log.w(TAG, "Starting Envoy")
         // disable this for testing
         EnvoyNetworking.passivelyTestDirect = false
@@ -542,15 +542,21 @@ class MainActivity : SingleFragmentActivity<MainFragment>(), MainFragment.Callba
             with(envoy) {
 //            setTestUrl("https://meta.wikimedia.org/", 200)
 //            setDirectUrl("https://www.wikipedia.org/")
-                addEnvoyUrl("masque://masque.smcdonald.us:4443/")
+                addEnvoyUrl("https://wiki.epochbelt.com/wikipedia/")
+//                addEnvoyUrl("envoy://?url=https%3A%2F%2Fwiki.epochbelt.com%2Fwikipedia")
+//                addEnvoyUrl("masque://masque.smcdonald.us:4443/")
 //                addEnvoyUrl("masque://127.0.0.1:27630")
+//                addEnvoyUrl("ss://Y2hhY2hhMjAtaWV0Zi1wb2x5MTMwNTp0aG90YWlwNGVpYmFpMHhhaWJ1cXVpMWlla3U3VG9vaw==@139.162.63.210:28368")
+//                addEnvoyUrl("v2srtp://139.162.63.208:23817?id=bd5b59d3-a35c-417f-8f20-0876e4b5a9aa")
+//                addEnvoyUrl("v2wechat://139.162.42.211:57897?id=bd5b59d3-a35c-417f-8f20-0876e4b5a9aa")
+//                addEnvoyUrl("hysteria2://nhssbKWzZrXKPs6109udIG2QJkxtsTWg@api2.smcdonald.us:443/")
                 setCallback(tempCallback)
                 setContext(tempContext)
 //                DEBUGsetTimeoutDirect(true)
-                connect()
+//                connect()
             }
         }
-        
+  */
 //        if (Prefs.isInitialOnboardingEnabled) {
 //            // TODO: onCreate also checks the following before onboarding, is that necessary here?
 //            // savedInstanceState == null && !intent.hasExtra(Constants.INTENT_EXTRA_IMPORT_READING_LISTS
